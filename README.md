@@ -3,7 +3,7 @@ XHISTORYS
 
 XVIDEOSの視聴履歴を管理するChrome Extensionsです。
 
-[公式サイト - XHISTORYS](http://bcrikko.github.io/xhistorys/)
+[公式サイト - XHISTORYS](http://bcrikko.github.io/XHISTORYS/)
 
 
 ## Dependencies

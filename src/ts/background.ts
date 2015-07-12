@@ -2,8 +2,6 @@
 /// <reference path="./common.ts" />
 /// <reference path="./IDB.ts" />
 
-// https://gist.github.com/mohamedmansour/803631
-
 var idb = new IDBLibrary(idbInfo);
 
 chrome.runtime.onMessage.addListener(
