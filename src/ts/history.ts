@@ -164,9 +164,9 @@ class XHistorys extends Vue {
                 type: MessageType.fetch_fav,
                 value: null,
                 search: {
-                    sort: { key: 'isFavorite', unique: false, order: 'prev' },
-                    range: <IDBKeyRange>{lower: 1, upper: 1, lowerOpen: false, upperOpen: false}
-                    // range: IDBKeyRange.only('true')
+                    sort: { key: ['isFavorite', 'date'], unique: false, order: 'prev' },
+                    range: <IDBKeyRange>{ lower: [1, "0000/00/00 00:00:00"], upper: [1, "9999/99/99 23:59:59"], lowerOpen: false, upperOpen: false }
+                    
                 }
             }
             );

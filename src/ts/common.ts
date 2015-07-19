@@ -17,7 +17,7 @@ var idbInfo: IDBInfo = {
     storeName: 'IDBLibrary',
     version: 1,
     key: { keyPath: 'id', autoIncrement: false },
-    sort: [{key: 'date', unique: false, order: 'prev'}, {key: 'isFavorite', unique: false, order: 'prev'}]
+    sort: [{key: ['date'], unique: false, order: 'prev'}, {key: ['isFavorite', 'date'], unique: false, order: 'prev'}]
 };
 
 class MessageType {
@@ -51,7 +51,7 @@ interface IRequest {
 }
 
 interface ISortKey {
-    key: string;
+    key: string[];
     order: string;
     unique: boolean;
 }

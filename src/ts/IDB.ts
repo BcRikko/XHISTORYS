@@ -4,6 +4,11 @@
 /// <reference path="./common.ts" />
 
 
+// KeyPathでMultiEntryを使うためのオーバーロード
+interface IDBObjectStore {
+    createIndex(name: string, keyPath: string[], optionalParameters?: any): IDBIndex;
+}
+
 
 interface IDBInfo {
     dbName: string;
@@ -29,7 +34,7 @@ class IDBLibrary {
             this._idb = req.result;
             var store = this._idb.createObjectStore(this._idbInfo.storeName, this._idbInfo.key);
             this._idbInfo.sort.forEach(function(sort: ISortKey) {
-                store.createIndex(sort.key, sort.key, { unique: sort.unique });
+                store.createIndex(sort.key.toString(), sort.key, { unique: sort.unique });
             });
             
             
@@ -105,7 +110,7 @@ class IDBLibrary {
         }    
         var req: IDBRequest;
         if (request.search && request.search.sort) {
-            req = store.index(request.search.sort.key).openCursor(range, request.search.sort.order);
+            req = store.index(request.search.sort.key.toString()).openCursor(range, request.search.sort.order);
         } else {
             req = store.openCursor();
         } 
