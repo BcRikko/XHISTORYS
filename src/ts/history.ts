@@ -60,7 +60,7 @@ class XHistorys extends Vue {
                     var _self = this;
                     this.isShowFavOnly = !this.isShowFavOnly;
                     _self.videos = [];
-                    
+
                     if (this.isShowFavOnly) {
                         this.showFavOnly();
                     } else {
@@ -69,6 +69,16 @@ class XHistorys extends Vue {
                         window.location.reload(true);
                     }
                     this.page = 0;
+                },
+                isSplite: function(url: string): boolean {
+                    switch (true) {
+                        case /xvideos/.test(url):
+                            return false;
+                        case /xhamster/.test(url):
+                            return true;
+                        default:
+                            return false;
+                    }
                 },
                 // sidebar
                 exportHistory: this.exportHistory,
@@ -211,14 +221,31 @@ class XHistorys extends Vue {
         var _self = this;
         var thumbIndex = 1;
         this.thumbIntervalId = setInterval(function() {
-            _self.videos[index].thumbnail = _self.videos[index].thumbnails[thumbIndex];
-            thumbIndex = (thumbIndex + 1) % 30;
-        }, 800);
+            
+            switch (true) {
+                case /xvideos/.test(_self.videos[index].url):
+                    _self.videos[index].thumbnail = _self.videos[index].thumbnails[thumbIndex];
+                    thumbIndex = (thumbIndex + 1) % 30;
+                    break;
+                case /xhamster/.test(_self.videos[index].url):
+                    var position = -160 * (thumbIndex - 1);
+                    _self.videos[index].style = 'background-image:url(' + _self.videos[index].thumbnail + ');background-position:' + position + 'px,0px;';
+                    thumbIndex = (thumbIndex + 1) % 10;
+                    break;
+            }
+        }, 600);
     }
     
     thumbReset(index: number): void{
         clearInterval(this.thumbIntervalId);
-        this.videos[index].thumbnail = this.videos[index].thumbnails[0];
+        switch (true) {
+            case /xvideos/.test(this.videos[index].url):
+                this.videos[index].thumbnail = this.videos[index].thumbnails[0];
+                break;
+            case /xhamster/.test(this.videos[index].url):
+                this.videos[index].style = 'background-image:url(' + this.videos[index].thumbnail +');background-position:0px,0px;';
+                break;
+        }
     }
 
 
@@ -288,7 +315,7 @@ var xhistorys = new XHistorys();
  */
 document.getElementById('xhistorys').addEventListener('mouseup', function() {
     var isShowTags = document.getElementsByClassName('is-showtags');
-    for (var i = 0; i < isShowTags.length; i++){
+    for (let i = 0; i < isShowTags.length; i++){
         (<HTMLInputElement>isShowTags.item(i)).checked = false;
     }
 });

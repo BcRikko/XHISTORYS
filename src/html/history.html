@@ -56,7 +56,7 @@
                     <div class="video-thumb" style="position: relative;">
                         <div>
                             <a href="{{video.url}}" target="_blank">
-                                <img class="video-image" src="{{video.thumbnail}}" v-on="mouseover: thumbChange($index), mouseout: thumbReset($index)"/>
+                                <img class="video-image" src="{{isSplite(video.url) ? '' : video.thumbnail}}" splite="{{isSplite(video.url) ? video.thumbnail : ''}}" style="{{video.style}}" v-on="mouseover: thumbChange($index), mouseout: thumbReset($index)"/>
                             </a>
                         </div>
                         <div class="video-time">

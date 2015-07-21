@@ -55,7 +55,7 @@ class Background {
         console.log('background.js: register');
         
         if (request.values) {
-            for (var i = 0; i < request.values.length; i++) {
+            for (let i = 0; i < request.values.length; i++) {
                 idb.register(request.values[i]);
             }
         } else {

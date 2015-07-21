@@ -10,6 +10,8 @@ interface IVideoInfo {
     count: number;
     thumbnail: string;
     thumbnails: string[];
+    
+    style: string;          // サムネの表示方法（XHamster用）
 }
 
 var idbInfo: IDBInfo = {
