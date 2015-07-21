@@ -40,7 +40,15 @@
                 <div id="{{video.id}}" class="video-card pull-left">
                     <div class="video-icons">
                         <i class="video-fav glyphicon glyphicon-heart video-fav-{{video.isFavorite ? 'true' : 'false'}}" v-on="click: fav(this, $index)"></i>
-                        <i class="video-tags glyphicon glyphicon-tags" v-on="click: isShowTags = !isShowTags"></i>
+                        
+                        <label class="video-tags glyphicon glyphicon-tags">
+                            <input type="checkbox" class="is-showtags" />
+                            <div class="tags">
+                            <ul class="tags-list">
+                                <li v-repeat="video.tags">{{$value}}</li>
+                            </ul>
+                            </div>
+                        </label>
                         <i class="video-delete glyphicon glyphicon-remove pull-right" v-on="click: del($index)"></i>
                     </div>
                     <div class="video-date">視聴 {{video.date | formatDate}}</div>
@@ -56,12 +64,6 @@
                         </div>
                     </div>
                     <div class="video-title"><a href="{{video.url}}" target="_blank" title="{{video.title}}">{{video.title}}</a></div>
-
-                    <div class="tags">
-                        <ul class="tags-list" v-show="isShowTags">
-                            <li v-repeat="video.tags">{{$value}}</li>
-                        </ul>
-                    </div>
                 </div>
             </div>
 

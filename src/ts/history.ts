@@ -29,7 +29,6 @@ class XHistorys extends Vue {
                 page: this.page,
                 dispSize: this.dispSize,
                 videos: this.videos,
-                isShowTags: false,
                 isShowFavOnly: false,
                 // sidebar
                 link: this.link,
@@ -281,58 +280,15 @@ class XHistorys extends Vue {
     }    
 }
 
-
-
-// class XHistorysOther extends Vue {
-//     exportData: any;
-//     link = <IExportLink>{};
-//     isFinishedExport: boolean;
-    
-//     constructor() {
-//         super(false);
-        
-//         this._init({
-//             el: '#settings',
-//             data: {
-//                 link: this.link,
-//                 isFinishedExport: false
-//             },
-//             methods: {
-//                 exportHistory: this.exportHistory,
-//                 importHistory: this.importHistory,
-//                 destroy: this.destroy
-//             }
-//         });
-//     }
-    
-//     exportHistory(): void {
-//         var data = JSON.stringify(xhistorys.videos);
-//         var link: IExportLink = {
-//             text: 'Download',
-//             filename: 'history_' + getDate() + '.json',
-//             href: URL.createObjectURL(new Blob([data], { type: 'text/plain' })),
-//             downloadurl: ["text/plain", 'text', this.link.href].join(':')
-//         };
-//         this.link = link;
-//         this.isFinishedExport = true;
-//     }
-    
-//     importHistory(): void {
-//         alert('import');
-//     }
-    
-//     destroy(): void{
-//         if (confirm('履歴を削除してもよろしいですか？')) {
-//             chrome.runtime.sendMessage(
-//                 {
-//                     type: MessageType.destroy,
-//                     value: null
-//                 }
-//                 );
-//             window.location.reload(true);
-//         }
-//     }
-// }
-
 var xhistorys = new XHistorys();
-// var xhistorysOther = new XHistorysOther();
+
+/**
+ * Tagsの非表示対応
+ * その他の場所をクリックしたらタグを非表示（Checkboxをoff）にする
+ */
+document.getElementById('xhistorys').addEventListener('mouseup', function() {
+    var isShowTags = document.getElementsByClassName('is-showtags');
+    for (var i = 0; i < isShowTags.length; i++){
+        (<HTMLInputElement>isShowTags.item(i)).checked = false;
+    }
+});
