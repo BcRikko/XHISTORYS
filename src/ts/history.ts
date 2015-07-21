@@ -12,6 +12,7 @@ class XHistorys extends Vue {
     videos: IVideoInfo[] = [];
     page: number = 0;
     dispSize: number = 12;
+    isLoadFinished = false;
     
     // sidebar
     exportData: any;
@@ -26,6 +27,7 @@ class XHistorys extends Vue {
             // el: '#main',
             el: '#xhistorys',
             data: {
+                isLoadFinished: this.isLoadFinished,
                 page: this.page,
                 dispSize: this.dispSize,
                 videos: this.videos,
@@ -57,6 +59,7 @@ class XHistorys extends Vue {
                     this.page = index;
                 },
                 showAllOrFav: function() {
+                    this.isLoadFinished = false;
                     var _self = this;
                     this.isShowFavOnly = !this.isShowFavOnly;
                     _self.videos = [];
@@ -164,9 +167,13 @@ class XHistorys extends Vue {
                 }
             }
             );
+
+        setTimeout(function() {
+            _self.isLoadFinished = true;
+        }, 800);
     }
     
-    showFavOnly(): void{
+    showFavOnly(): void {
         var _self = this;
         chrome.runtime.sendMessage(
             {
@@ -175,11 +182,11 @@ class XHistorys extends Vue {
                 search: {
                     sort: { key: ['isFavorite', 'date'], unique: false, order: 'prev' },
                     range: <IDBKeyRange>{ lower: [1, "0000/00/00 00:00:00"], upper: [1, "9999/99/99 23:59:59"], lowerOpen: false, upperOpen: false }
-                    
+
                 }
             }
             );
-        
+
         chrome.runtime.onMessage.addListener(
             function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
                 if (request.type == MessageType.fetch_fav + '_return') {
@@ -187,6 +194,10 @@ class XHistorys extends Vue {
                 }
             }
             );
+
+        setTimeout(function() {
+            _self.isLoadFinished = true;
+        }, 800);
     }
     
     /**

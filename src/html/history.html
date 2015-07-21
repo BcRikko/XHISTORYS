@@ -131,7 +131,13 @@
         <p>&copy; 2015 <a href="http://kuroeveryday.blogspot.com/" target="_blank">Black Everyday Company</a></p>
         </div>
     </footer>
-        
+
+    <div id="loading" v-if="!isLoadFinished">
+        <div>
+            <i class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></i><span> Loading...</span>
+        </div>
+    </div>
+
     <script src="./libs/vue.min.js"></script>
     <script src="../js/common.js"></script>
     <script src="../js/utils.js"></script>
