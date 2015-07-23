@@ -22,16 +22,40 @@ var idbInfo: IDBInfo = {
     sort: [{key: ['date'], unique: false, order: 'prev'}, {key: ['isFavorite', 'date'], unique: false, order: 'prev'}]
 };
 
+interface ITagInfo {
+    name: string;
+    count: number;
+    
+    fontSize: number;       // タグクラウド用
+}
+
+var tagInfo: IDBInfo = {
+    dbName: 'IDBTagCloud',
+    storeName: 'TagCloud',
+    version: 1,
+    key: { keyPath: 'name', autoIncrement: false },
+    sort: [{key: ['count'], unique:false, order: 'prev'}]
+};
+
+interface HashTable<T> {
+    [key: string]: T;
+}
+
 class MessageType {
     static register = 'register';
     static register_fav = 'register_fav';
+    static register_tags = 'register_tags';
     static register_import = 'register_import';
+    static register_import_tags = 'register_import_tags';
 
     static search = 'search';
     static search_count = 'search_count';
+    static search_tag = 'search_tag';
+    static search_import_tag = 'search_import_tag';
     
     static fetch = 'fetch';
-     static fetch_fav = 'fetch_fav';
+    static fetch_fav = 'fetch_fav';
+    static fetch_tag = 'fetch_tag';
     
     static del = 'delete';
     static allDelete = 'allDelete';
@@ -42,8 +66,8 @@ class MessageType {
 
 interface IRequest {
     type: MessageType;
-    value: IVideoInfo;
-    values?: IVideoInfo[];
+    value: any;
+    values?: any[];
     search: {
         sort: ISortKey;
         range?: IDBKeyRange;

@@ -19,6 +19,8 @@ class XHistorys extends Vue {
     link = <IExportLink>{};
     isFinishedExport: boolean;
     
+    tags: ITagInfo[] = [];
+    
     
     constructor() {
         super(false);
@@ -34,7 +36,8 @@ class XHistorys extends Vue {
                 isShowFavOnly: false,
                 // sidebar
                 link: this.link,
-                isFinishedExport: false
+                isFinishedExport: false,
+                tags: this.tags
             },
             methods: {
                 fav: this.fav,
@@ -91,6 +94,8 @@ class XHistorys extends Vue {
             created: function() {
                 console.log('histrot.js: created');
                 this.fetch();
+                
+                this.createTags();
             },
             computed: {
                 displayVideos: function(): IVideoInfo[] {
@@ -262,7 +267,68 @@ class XHistorys extends Vue {
 
     /**
      * Sidebar
-     */    
+     */
+    createTags(): void {
+        var LIMITS_TAGS = 40;
+
+        var _self = this;
+        chrome.runtime.sendMessage(
+            {
+                type: MessageType.fetch_tag,
+                value: null,
+                search: {
+                    sort: { key: 'count', unique: false, order: 'prev' },
+                }
+            }
+            );
+
+        var tagCount = 0;
+        chrome.runtime.onMessage.addListener(
+            function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                if (request.type == MessageType.fetch_tag + '_return') {
+                    if (tagCount < LIMITS_TAGS) {
+                        _self.tags.push(request.value);
+                        tagCount++;
+                    }
+                }
+            }
+            );
+        
+        setTimeout(function() {
+            if (_self.tags.length <= 0) { return false; }
+
+            var limits = _self.tags.length < LIMITS_TAGS ? _self.tags.length : LIMITS_TAGS;
+
+            var maxSize = 38;
+            var minSize = 12;
+
+            var copyTags = _self.tags;
+
+            var max = copyTags[0].count;
+            var min = copyTags[limits - 1].count;
+            
+            _self.tags = [];
+            for (let i = 0; i < limits; i++) {
+                var perc = (max === min) ? 1 : (copyTags[i].count - min) / (max - min);
+                var size = Math.round((maxSize - minSize) * perc + minSize);
+                
+                _self.tags[i] = copyTags[i];
+                _self.tags[i].fontSize = size;
+            }
+            
+            _self.tags.sort((a, b) => {
+                if (a.name < b.name) {
+                    return -1;
+                } else if (a.name > b.name) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            });
+        }, 3000);
+     }
+
+
     exportHistory(): void {
         var data = JSON.stringify(this.videos);
         var link: IExportLink = {
@@ -288,6 +354,7 @@ class XHistorys extends Vue {
         this.videos = [];
         var _self = this;
         
+        // 履歴用
         setTimeout(function() {
             chrome.runtime.sendMessage(
                 {
@@ -298,6 +365,32 @@ class XHistorys extends Vue {
                 );
 
             _self.videos = importJson;
+        }, 500);
+        
+        // タグクラウド用
+        setTimeout(function() {
+            var importTags: ITagInfo[] = [];
+            var hash: HashTable<ITagInfo> = {};
+            hash
+            importJson.forEach((videoInfo: IVideoInfo) => {
+                videoInfo.tags.forEach((tag) => {
+                    if (hash[tag]) {
+                        hash[tag] = <ITagInfo>{ name: tag, count: hash[tag].count + 1, fontSize: 0 };
+                    } else {
+                        hash[tag] = <ITagInfo>{ name: tag, count: 1, fontSize: 0 };
+                    }
+                });
+
+            });
+            
+            chrome.runtime.sendMessage(
+                {
+                    type: MessageType.register_import_tags,
+                    values: hash
+                },
+                function() {
+                }
+                );
         }, 500);
 
     }

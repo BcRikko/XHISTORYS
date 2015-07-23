@@ -17,7 +17,7 @@ $(function() {
             videoInfo = getXHamsterInfo();
             break;
     }
-    
+
     var alreadyInfo: IVideoInfo;
     // 視聴回数のカウント
     var count = 1;
@@ -59,6 +59,40 @@ $(function() {
             break;
     }
 
+    setTimeout(function() {
+        if (!alreadyInfo) {
+            videoInfo.tags.forEach((tag) => {
+                var tagCount = 1;
+                chrome.runtime.sendMessage(
+                    {
+                        type: MessageType.search_tag,
+                        value: tag
+                    }
+                    );
+
+                chrome.runtime.onMessage.addListener(
+                    function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                        if (request.type == MessageType.search_tag + '_return') {
+                            if (request.value.count > 0) {
+                                tagCount = request.value.count + 1;
+                            }
+                        }
+                    }
+                    );
+
+                setTimeout(function() {
+                    chrome.runtime.sendMessage(
+                        {
+                            type: MessageType.register_tags,
+                            value: <ITagInfo>{ name: tag, count: tagCount, fontSize: 0 }
+                        },
+                        function() {
+                        });
+                }, 1500);
+            });
+        }
+    }, 1500);
+
     // 登録
     setTimeout(function() {
         videoInfo.count = count;
@@ -94,7 +128,7 @@ function getXVideosInfo(): IVideoInfo {
     var tags: string[] = [];
     $('#video-tags').find('a').each(function() {
         if ($(this).attr('href') != '/tags/') {
-            tags.push($(this).text());
+            tags.push($(this).text().toLowerCase());
         }
     });
     videoInfo.tags = tags;
@@ -118,7 +152,7 @@ function getXHamsterInfo(): IVideoInfo {
 
     var tags: string[] = [];
     $('#channels').find('a').each(function() {
-        tags.push($(this).text());
+        tags.push($(this).text().toLowerCase());
     });
     videoInfo.tags = tags;
     

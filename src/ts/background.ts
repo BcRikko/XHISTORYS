@@ -3,6 +3,7 @@
 /// <reference path="./IDB.ts" />
 
 var idb = new IDBLibrary(idbInfo);
+var idbTags = new IDBLibrary(tagInfo);
 
 chrome.runtime.onMessage.addListener(
     function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
@@ -35,8 +36,19 @@ chrome.runtime.onMessage.addListener(
             case MessageType.callApi_thumb:
                 background.callApi(request, sendResponse);
                 break;
+            case MessageType.register_tags:
+            case MessageType.register_import_tags:
+                background.registerTags(request, sendResponse);
+                break;
+            case MessageType.search_tag:
+            case MessageType.search_import_tag:    
+                background.searchTag(request, sendResponse);
+                break;
+            case MessageType.fetch_tag:
+                background.fetchTag(request, sendResponse);
+                break;
             default:
-                console.log('default:' + request.type);
+                // console.log('default:' + request.type);
                 break;
         }
     }
@@ -66,6 +78,25 @@ class Background {
         }
     }
 
+    registerTags(request: IRequest, callback: Function): void{
+        console.log('background.js: registerTags');
+
+        if (request.values) {
+            // for (let i = 0; i < request.values.length; i++) {
+            //     idbTags.register(request.values[i]);
+            // }
+            for (var key in request.values) {
+                idbTags.register(request.values[key])
+            }
+        } else {
+            idbTags.register(request.value);
+        }  
+
+        if (callback) {
+            callback(request);
+        }
+    }
+    
     /**
      * 検索
      * @param request
@@ -82,6 +113,19 @@ class Background {
                 );
         });
     }
+
+    searchTag(request: IRequest, callback?: Function): void{
+        console.log('background.js: searchTag');
+        idbTags.search(request.value, function(result: ITagInfo) {
+            chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    type: request.type + '_return',
+                    value: result
+                }, function(response) { });
+            });
+        });
+    }
+
 
     /**
      * 検索（Content Script用）
@@ -118,6 +162,19 @@ class Background {
         });
     }
 
+    fetchTag(request: IRequest, callback?: Function): void{
+        console.log('background.js: fetch_tag');
+        idbTags.fetch(request,
+            function(result: ITagInfo) {
+                chrome.runtime.sendMessage(
+                    {
+                        type: request.type + '_return',
+                        value: result
+                    }
+                );
+            });
+    }
+    
     /**
      * 削除
      * @param request
@@ -156,6 +213,7 @@ class Background {
     destroy(request: IRequest, callback?: Function): void {
         console.log('background.js: destroy');
         idb.destroy();
+        idbTags.destroy();
         if (callback) {
             callback(request);
         }

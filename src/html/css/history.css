@@ -180,6 +180,18 @@ input[type="checkbox"].is-showtags:checked + .tags{
     float: left;
 }
 
+#tag-cloud {
+    padding: 3px 3px;
+    width: auto;
+    height: auto;
+    text-align: center;
+}
+
+#tag-cloud span {
+    padding: 0 3px;
+    text-align: center;
+    display: inline-block;
+}
 
 #loading {
     clear: both;
