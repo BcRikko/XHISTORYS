@@ -288,8 +288,9 @@ class XHistorys extends Vue {
      * オンマウスでサムネの切り替え
      */
     private thumbIntervalId: number;
-    thumbChange(index: number): void{
+    thumbChange(videoIndex: number): void{
         var _self = this;
+        var index = (this.page * this.dispSize) + videoIndex;
         var thumbIndex = 1;
         this.thumbIntervalId = setInterval(function() {
             
@@ -307,7 +308,8 @@ class XHistorys extends Vue {
         }, 600);
     }
     
-    thumbReset(index: number): void{
+    thumbReset(videoIndex: number): void{
+        var index = (this.page * this.dispSize) + videoIndex;
         clearInterval(this.thumbIntervalId);
         switch (true) {
             case /xvideos/.test(this.videos[index].url):
