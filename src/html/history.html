@@ -6,20 +6,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="./libs/css/bootstrap.min.css" rel="stylesheet">
-    <link href="./css/history.css" rel="stylesheet" type="text/css" />
+    <link href="./css/history.css" rel="stylesheet" type="text/css">
 </head>
 <body id="xhistorys">
     <header class="navbar-fixed-top">
-        <form class="form-inline">
+        <form id="header-form" class="form-inline" v-on="submit: search(keywords)">
             <div class="form-group">
                 <h1 id="logo"><span class="red-x">X</span>HISTORYS</h1>
             </div>
             <div class="form-group">
                 <label class="sr-only control-label" for="keyword">キーワード</label>
-                <input id="search-keyword" type="text" class="form-control" placeholder="検索キーワードを入力"/>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="検索" class="btn btn-default" />
+                <input id="search-keyword" type="text" class="form-control" placeholder="検索キーワードを入力" v-model="keywords"/>
+                <input type="button" value="検索" class="btn btn-default" v-on="click: search(keywords)"/>
                 <a class="btn btn-default" v-on="click: showAllOrFav">{{isShowFavOnly ? "すべて表示" : "お気に入りのみ表示"}}</a>
             </div>
         </form>
@@ -34,8 +32,8 @@
                     <li v-on="click: showNext" class="{{isEndPage ? 'disabled' : ''}}"><a>&gt;</a></li>
                     <li v-on="click: showLast" class="{{isEndPage ? 'disabled' : ''}}"><a>&raquo;</a></li>
                 </ul>
-            </div>
-            
+            </div><!--#pagination-->
+
             <div id="videos" v-repeat="video :displayVideos">
                 <div id="{{video.id}}" class="video-card pull-left">
                     <div class="video-icons">
@@ -44,13 +42,15 @@
                         <label class="video-tags glyphicon glyphicon-tags">
                             <input type="checkbox" class="is-showtags" />
                             <div class="tags">
-                            <ul class="tags-list">
-                                <li v-repeat="video.tags">{{$value}}</li>
-                            </ul>
-                            </div>
+                                <ul class="tags-list">
+                                    <li v-repeat="video.tags">{{$value}}</li>
+                                </ul>
+                            </div><!--.tags-->
                         </label>
+
                         <i class="video-delete glyphicon glyphicon-remove pull-right" v-on="click: del($index)"></i>
-                    </div>
+                    </div><!--.video-icons-->
+                    
                     <div class="video-date">視聴 {{video.date | formatDate}}</div>
                     <div class="video-count">視聴回数 {{video.count}}回</div>
                     <div class="video-thumb" style="position: relative;">
@@ -61,11 +61,12 @@
                         </div>
                         <div class="video-time">
                             <span>{{video.time}}</span>
-                        </div>
-                    </div>
+                        </div><!--.video-time-->
+                    </div><!--.video-thumb-->
+                    
                     <div class="video-title"><a href="{{video.url}}" target="_blank" title="{{video.title}}">{{video.title}}</a></div>
-                </div>
-            </div>
+                </div><!--.video-card-->
+            </div> <!--#videos-->
 
             <!--このままだちページ番号が無限のびるので10くらいで表示させなくする-->
             <div id="pagination">
@@ -76,8 +77,8 @@
                     <li v-on="click: showNext" class="{{isEndPage ? 'disabled' : ''}}"><a>&gt;</a></li>
                     <li v-on="click: showLast" class="{{isEndPage ? 'disabled' : ''}}"><a>&raquo;</a></li>
                 </ul>
-            </div>
-        </div>
+            </div> <!-- #pagination -->
+        </div><!--#main-->
 
         <div id="side" class="col-sm-4">
             <div id="tag-cloud" class="well">

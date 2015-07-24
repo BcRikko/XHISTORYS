@@ -13,6 +13,7 @@ class XHistorys extends Vue {
     page: number = 0;
     dispSize: number = 12;
     isLoadFinished = false;
+    keywords = '';
     
     // sidebar
     exportData: any;
@@ -34,6 +35,7 @@ class XHistorys extends Vue {
                 dispSize: this.dispSize,
                 videos: this.videos,
                 isShowFavOnly: false,
+                keyword: this.keywords,
                 // sidebar
                 link: this.link,
                 isFinishedExport: false,
@@ -44,6 +46,7 @@ class XHistorys extends Vue {
                 del: this.del,
                 thumbChange: this.thumbChange,
                 thumbReset: this.thumbReset,
+                search: this.search,
                 showFirst: function() {
                     this.page = 0;
                 },
@@ -204,6 +207,57 @@ class XHistorys extends Vue {
             _self.isLoadFinished = true;
         }, 800);
     }
+
+    /**
+     * キーワード検索
+     */
+    search(words: string): void {
+        this.isLoadFinished = false;
+        var _self = this;
+        _self.videos = [];
+
+        if (words.trim().length == 0) {
+            // 再表示
+            window.location.reload(true);
+            return;
+        }
+
+        chrome.runtime.sendMessage(
+            {
+                type: MessageType.fetch_keyword,
+                value: null,
+                search: {
+                    sort: { key: 'date', unique: false, order: 'prev' },
+                }
+            }
+            );
+
+        chrome.runtime.onMessage.addListener(
+            function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                if (request.type == MessageType.fetch_keyword + '_return') {
+                    var videoInfo: IVideoInfo = request.value;
+                    if (videoInfo.title.toLowerCase().indexOf(words.toLowerCase()) > -1) {
+                        _self.videos.push(request.value);
+                    } else {
+                        videoInfo.tags.forEach((tag) => {
+                            if (tag.toLowerCase().indexOf(words.toLowerCase()) > -1) {
+                                setTimeout(function() {
+                                    _self.videos.push(request.value);
+                                }, 50);
+                                return;
+                            }
+                        });
+                    }
+                }
+            }
+            );
+
+        setTimeout(function() {
+            _self.isLoadFinished = true;
+        }, 800);
+    }
+    
+    
     
     /**
      * 対象履歴の削除
@@ -423,3 +477,10 @@ document.getElementById('xhistorys').addEventListener('mouseup', function() {
         (<HTMLInputElement>isShowTags.item(i)).checked = false;
     }
 });
+
+/**
+ * Chrome上の制約で、インラインでjsが書けないため、ここでsubmitを無効化する
+ */
+document.getElementById('header-form').addEventListener('submit', function(event) {
+    event.preventDefault();
+}, false);

@@ -56,6 +56,7 @@ class MessageType {
     static fetch = 'fetch';
     static fetch_fav = 'fetch_fav';
     static fetch_tag = 'fetch_tag';
+    static fetch_keyword = 'fetch_keyword';
     
     static del = 'delete';
     static allDelete = 'allDelete';

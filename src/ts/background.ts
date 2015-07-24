@@ -22,6 +22,7 @@ chrome.runtime.onMessage.addListener(
                 break;
             case MessageType.fetch:
             case MessageType.fetch_fav:
+            case MessageType.fetch_keyword:
                 background.fetch(request, sendResponse);
                 break;
             case MessageType.del:
