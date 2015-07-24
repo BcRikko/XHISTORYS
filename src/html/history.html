@@ -43,7 +43,7 @@
                             <input type="checkbox" class="is-showtags" />
                             <div class="tags">
                                 <ul class="tags-list">
-                                    <li v-repeat="video.tags">{{$value}}</li>
+                                    <li v-repeat="video.tags"><a v-on="click: search($value)">{{$value}}</a></li>
                                 </ul>
                             </div><!--.tags-->
                         </label>
