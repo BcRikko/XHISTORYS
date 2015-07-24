@@ -11,7 +11,7 @@ interface IExportLink {
 class XHistorys extends Vue {
     videos: IVideoInfo[] = [];
     page: number = 0;
-    dispSize: number = 12;
+    dispSize: number = 20;
     isLoadFinished = false;
     keywords = '';
     
@@ -213,6 +213,7 @@ class XHistorys extends Vue {
      */
     search(words: string): void {
         this.isLoadFinished = false;
+        this.keywords = words;
         var _self = this;
         _self.videos = [];
 
