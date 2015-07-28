@@ -27,7 +27,6 @@ class XHistorys extends Vue {
         super(false);
 
         this._init({
-            // el: '#main',
             el: '#xhistorys',
             data: {
                 isLoadFinished: this.isLoadFinished,
@@ -68,13 +67,11 @@ class XHistorys extends Vue {
                     this.isLoadFinished = false;
                     var _self = this;
                     this.isShowFavOnly = !this.isShowFavOnly;
-                    _self.videos = [];
 
                     if (this.isShowFavOnly) {
+                        _self.videos = [];
                         this.showFavOnly();
                     } else {
-                        // Uncaught TypeError: Cannot read property '__vue__' of null になるので暫定対応
-                        // this.fetch();
                         window.location.reload(true);
                     }
                     this.page = 0;
@@ -96,7 +93,6 @@ class XHistorys extends Vue {
             },
             created: function() {
                 this.isLoadFinished = false;
-                console.log('histrot.js: created'),
                 this.fetch(),
                 this.createTags()
             },
@@ -183,7 +179,10 @@ class XHistorys extends Vue {
                 _self.isLoadFinished = true;
             });    
     }
-    
+
+    /**
+     * お気に入りのみ表示
+     */
     showFavOnly(): void {
         var _self = this;
         Promise.resolve()
@@ -215,6 +214,7 @@ class XHistorys extends Vue {
 
     /**
      * キーワード検索
+     * @param  words 検索キーワード
      */
     search(words: string): void {
         this.isLoadFinished = false;
@@ -262,8 +262,6 @@ class XHistorys extends Vue {
             });
     }
     
-    
-    
     /**
      * 対象履歴の削除
      * @param index
@@ -283,14 +281,14 @@ class XHistorys extends Vue {
             function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
                 if (request.type == MessageType.del + '_return') {
                     _self.videos.splice(pageIndex, 1);
-                    // _self.videos.$remove(pageIndex);
                 }
             }
         );
     }
    
     /**
-     * オンマウスでサムネの切り替え
+     * オンマウスでサムネの切り替え（開始）
+     * @param  videoIndex
      */
     private thumbIntervalId: number;
     thumbChange(videoIndex: number): void{
@@ -312,7 +310,11 @@ class XHistorys extends Vue {
             }
         }, 600);
     }
-    
+
+    /**
+     * オンマウスでサムネの切り替え（停止）
+     * @param  videoIndex
+     */    
     thumbReset(videoIndex: number): void{
         var index = (this.page * this.dispSize) + videoIndex;
         clearInterval(this.thumbIntervalId);
@@ -329,6 +331,10 @@ class XHistorys extends Vue {
 
     /**
      * Sidebar
+     */
+         
+    /**
+     * タグクラウド生成
      */
     createTags(): void {
         var LIMITS_TAGS = 40;
@@ -393,7 +399,9 @@ class XHistorys extends Vue {
             });
      }
 
-
+    /**
+     * 視聴履歴出力
+     */
     exportHistory(): void {
         var data = JSON.stringify(this.videos);
         var link: IExportLink = {
@@ -405,7 +413,10 @@ class XHistorys extends Vue {
         this.link = link;
         this.isFinishedExport = true;
     }
-    
+
+    /**
+     * 視聴履歴入力
+     */    
     importHistory(): void {
         var importFile = (<HTMLInputElement>document.getElementById('import-file')).files[0];
         if (!importFile) {
@@ -467,7 +478,10 @@ class XHistorys extends Vue {
             ]);
         });
     }
-    
+
+    /**
+     * 視聴履歴全削除（データベース削除）
+     */
     destroy(): void{
         if (confirm('履歴を削除してもよろしいですか？')) {
             chrome.runtime.sendMessage(
@@ -485,6 +499,7 @@ class XHistorys extends Vue {
 }
 
 var xhistorys = new XHistorys();
+
 
 /**
  * Tagsの非表示対応

@@ -9,7 +9,9 @@ interface IDBObjectStore {
     createIndex(name: string, keyPath: string[], optionalParameters?: any): IDBIndex;
 }
 
-
+/**
+ * データベース情報
+ */
 interface IDBInfo {
     dbName: string;
     storeName: string;

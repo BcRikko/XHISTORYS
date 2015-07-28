@@ -49,7 +49,6 @@ chrome.runtime.onMessage.addListener(
                 background.fetchTag(request, sendResponse);
                 break;
             default:
-                // console.log('default:' + request.type);
                 break;
         }
     }
@@ -60,7 +59,7 @@ chrome.runtime.onMessage.addListener(
  */
 class Background {
     /**
-     * 登録
+     * 視聴履歴登録
      * @param request
      * @param callback
      */
@@ -79,13 +78,15 @@ class Background {
         }
     }
 
+    /**
+     * タグ登録（タグクラウド用）
+     * @param request
+     * @param callback
+     */    
     registerTags(request: IRequest, callback: Function): void{
         console.log('background.js: registerTags');
 
         if (request.values) {
-            // for (let i = 0; i < request.values.length; i++) {
-            //     idbTags.register(request.values[i]);
-            // }
             for (var key in request.values) {
                 idbTags.register(request.values[key])
             }
@@ -97,7 +98,7 @@ class Background {
             callback(request);
         }
     }
-    
+
     /**
      * 検索
      * @param request
@@ -115,6 +116,11 @@ class Background {
         });
     }
 
+    /**
+     * タグ検索
+     * @param request
+     * @param callback  ※基本はcallbackではなくsendMessageを返す
+     */
     searchTag(request: IRequest, callback?: Function): void{
         console.log('background.js: searchTag');
         idbTags.search(request.value, function(result: ITagInfo) {
@@ -126,7 +132,6 @@ class Background {
             });
         });
     }
-
 
     /**
      * 検索（Content Script用）
@@ -145,7 +150,7 @@ class Background {
     }
 
     /**
-     * 全検索
+     * 全視聴履歴検索
      * @param request
      * @param callback  ※基本はcallbackではなくsendMessageを返す
      */
@@ -162,6 +167,11 @@ class Background {
         });
     }
 
+    /**
+     * 全タグ検索
+     * @param request
+     * @param callback  ※基本はcallbackではなくsendMessageを返す
+     */    
     fetchTag(request: IRequest, callback?: Function): void{
         console.log('background.js: fetch_tag');
         idbTags.fetch(request,
