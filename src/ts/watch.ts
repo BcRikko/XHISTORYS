@@ -1,4 +1,6 @@
 /// <reference path="../typings/jquery/jquery.d.ts" />
+/// <reference path="../typings/es6-promise/es6-promise.d.ts" />
+
 /// <reference path="./common.ts" />
 /// <reference path="./IDB.ts" />
 /// <reference path="./background.ts" />
@@ -6,7 +8,9 @@
 
 
 $(function() {
-    var videoInfo = <IVideoInfo>{};
+    var videoInfo = <IVideoInfo>{}; // 登録情報
+    var alreadyInfo: IVideoInfo;    // 既存履歴の情報
+    var count = 1;                  // 視聴回数のカウント
 
     var domain = location.hostname.toLowerCase();
     switch (true) {
@@ -18,97 +22,118 @@ $(function() {
             break;
     }
 
-    var alreadyInfo: IVideoInfo;
-    // 視聴回数のカウント
-    var count = 1;
-    chrome.runtime.sendMessage(
-        {
-            type: MessageType.search_count,
-            value: videoInfo
-        }
-        );
-    chrome.runtime.onMessage.addListener(
-        function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
-            if (request.type == MessageType.search_count + '_return') {
-                alreadyInfo = request.value;
-                if (request.value.count > 0) {
-                    count = request.value.count + 1;
-                }
-            }
-        }
-        );
-
-    switch (true) {
-        case /xvideos/.test(domain):
-            // サムネ取得（Api呼び出し）
-            chrome.runtime.sendMessage(
-                {
-                    type: MessageType.callApi_thumb,
-                    value: videoInfo
-                }, function(value: IVideoInfo) {
-                    videoInfo = value;
-                    videoInfo.thumbnail = value.thumbnails[0];
-                }
-                );
-            break;
-            
-        case /xhamster/.test(domain):
-            videoInfo.thumbnail = getThumbnailFromXHamster(videoInfo.id);
-            videoInfo.thumbnails = [];
-            videoInfo.style = 'background-image:url(' + videoInfo.thumbnail +');background-position:0px,0px;'
-            break;
-    }
-
-    setTimeout(function() {
-        if (!alreadyInfo) {
-            videoInfo.tags.forEach((tag) => {
-                var tagCount = 1;
+    Promise.resolve()
+        .then(() => {
+            // 履歴を検索し、視聴回数をカウントする
+            return new Promise((resolve, reject) => {
                 chrome.runtime.sendMessage(
                     {
-                        type: MessageType.search_tag,
-                        value: tag
+                        type: MessageType.search_count,
+                        value: videoInfo
                     }
                     );
-
                 chrome.runtime.onMessage.addListener(
                     function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
-                        if (request.type == MessageType.search_tag + '_return') {
-                            if (request.value.count > 0) {
-                                tagCount = request.value.count + 1;
+                        if (request.type == MessageType.search_count + '_return') {
+                            alreadyInfo = request.value;
+
+                            if (alreadyInfo) {
+                                if (request.value.count > 0) {
+                                    count = request.value.count + 1;
+                                }
                             }
+                            resolve();
                         }
                     }
                     );
+            })
+        })
+        .then(() => {
+            // サムネの取得
+            return new Promise((resolve, reject) => {
+                switch (true) {
+                    case /xvideos/.test(domain):
+                        // サムネ取得（Api呼び出し）
+                        chrome.runtime.sendMessage(
+                            {
+                                type: MessageType.callApi_thumb,
+                                value: videoInfo
+                            }, function(value: IVideoInfo) {
+                                videoInfo = value;
+                                videoInfo.thumbnail = value.thumbnails[0] ? value.thumbnails[0] : '';
+                                resolve();
+                            }
+                            );
+                        break;
 
-                setTimeout(function() {
+                    case /xhamster/.test(domain):
+                        videoInfo.thumbnail = getThumbnailFromXHamster(videoInfo.id);
+                        videoInfo.thumbnails = [];
+                        videoInfo.style = 'background-image:url(' + videoInfo.thumbnail + ');background-position:0px,0px;'
+                        resolve();
+                        break;
+                }
+            });
+        })
+        .then(() => {
+            return Promise.all([
+                // 視聴履歴の登録
+                new Promise((resolve, reject) => {
+                    videoInfo.count = count;
+                    if (alreadyInfo) {
+                        videoInfo.isFavorite = alreadyInfo.isFavorite;
+                    } else {
+                        videoInfo.isFavorite = 0;   // false
+                    }
                     chrome.runtime.sendMessage(
                         {
-                            type: MessageType.register_tags,
-                            value: <ITagInfo>{ name: tag, count: tagCount, fontSize: 0 }
+                            type: MessageType.register,
+                            value: videoInfo
                         },
                         function() {
                         });
-                }, 1500);
-            });
-        }
-    }, 1500);
+                    resolve();
+                }),
+                
+                // タグクラウドの登録
+                new Promise((reslove, reject) => {
+                    if (alreadyInfo) return;
+                    videoInfo.tags.forEach((tag) => {
+                        // var tagPromise = new Promise((resolve, reject) => {
+                        var tagCount = 1;
 
-    // 登録
-    setTimeout(function() {
-        videoInfo.count = count;
-        if (alreadyInfo) {
-            videoInfo.isFavorite = alreadyInfo.isFavorite;
-        } else {
-            videoInfo.isFavorite = 0;   // false
-        }
-        chrome.runtime.sendMessage(
-            {
-                type: MessageType.register,
-                value: videoInfo
-            },
-            function() {
-            });
-    }, 1500);
+                        new Promise((reslove, reject) => {
+                            chrome.runtime.sendMessage(
+                                {
+                                    type: MessageType.search_tag,
+                                    value: tag
+                                }
+                                );
+
+                            chrome.runtime.onMessage.addListener(
+                                function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                                    if (request.type == MessageType.search_tag + '_return') {
+                                        if (request.value && request.value.count > 0) {
+                                            tagCount = request.value.count + 1;
+                                        }
+                                        reslove();
+                                    }
+                                }
+                                );
+                        })
+                        .then(() => {
+                            chrome.runtime.sendMessage(
+                                {
+                                    type: MessageType.register_tags,
+                                    value: <ITagInfo>{ name: tag, count: tagCount, fontSize: 0 }
+                                },
+                                function() {
+                                });
+                        });
+                    });
+                })
+            ])
+        });
 });
 
 /**

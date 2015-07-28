@@ -19,6 +19,9 @@
     },
     "vue/vue.d.ts": {
       "commit": "ac3a1f059f655059484d6aa5ba1f0f85908ae06c"
+    },
+    "es6-promise/es6-promise.d.ts": {
+      "commit": "f6c8ca47193fb67947944a3170912672ac3e908e"
     }
   }
 }

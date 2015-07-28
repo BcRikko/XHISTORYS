@@ -279,11 +279,12 @@ class XHistorys extends Vue {
             function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
                 if (request.type == MessageType.del + '_return') {
                     _self.videos.splice(pageIndex, 1);
+                    // _self.videos.$remove(pageIndex);
                 }
             }
         );
     }
-    
+   
     /**
      * オンマウスでサムネの切り替え
      */

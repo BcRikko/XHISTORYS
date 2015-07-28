@@ -85,9 +85,14 @@ class IDBLibrary {
                 callback(result);
             } else {
                 console.log('対象データは存在しません。')
+                callback(result);
             }
 
             console.log('success:search');
+        }
+        
+        req.onerror = () => {
+            throw 'error:search' + req.error.toString();
         }
     }
 

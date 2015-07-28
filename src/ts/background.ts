@@ -135,7 +135,6 @@ class Background {
      */
     searchForTabs(request: IRequest, callback?: Function): void{
         idb.search(request.value.id, function(result: IVideoInfo) {
-            console.log(result);
             chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
                 chrome.tabs.sendMessage(tabs[0].id, {
                     type: MessageType.search_count + '_return',
