@@ -95,10 +95,13 @@ class XHistorys extends Vue {
                 destroy: this.destroy
             },
             created: function() {
-                console.log('histrot.js: created');
-                this.fetch();
-                
-                this.createTags();
+                this.isLoadFinished = false;
+                console.log('histrot.js: created'),
+                this.fetch(),
+                this.createTags()
+            },
+            ready: function() {
+                this.isLoadFinished = true;
             },
             computed: {
                 displayVideos: function(): IVideoInfo[] {
@@ -142,15 +145,13 @@ class XHistorys extends Vue {
         
         this.videos[pageIndex].isFavorite = this.videos[pageIndex].isFavorite ? 0 : 1; 
         
-        setTimeout(function() {
-            chrome.runtime.sendMessage(
-                {
-                    type: MessageType.register_fav,
-                    value: _self.videos[pageIndex]
-                },
-                function() { return true;}
-                );
-        }, 100);
+        chrome.runtime.sendMessage(
+            {
+                type: MessageType.register_fav,
+                value: _self.videos[pageIndex]
+            },
+            function() { return true;}
+            );
     }
 
     /**
@@ -158,54 +159,58 @@ class XHistorys extends Vue {
      */
     fetch(): void {
         var _self = this;
-        chrome.runtime.sendMessage(
-            {
-                type: MessageType.fetch,
-                value: null,
-                search: {
-                    sort: { key: 'date', unique: false, order: 'prev' },
-                }
-            }
-            );
-        
-        chrome.runtime.onMessage.addListener(
-            function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
-                if (request.type == MessageType.fetch + '_return') {
-                    _self.videos.push(request.value);
-                }
-            }
-            );
+        Promise.resolve()
+            .then(() => {
+                chrome.runtime.sendMessage(
+                    {
+                        type: MessageType.fetch,
+                        value: null,
+                        search: {
+                            sort: { key: 'date', unique: false, order: 'prev' },
+                        }
+                    }
+                    );
 
-        setTimeout(function() {
-            _self.isLoadFinished = true;
-        }, 800);
+                chrome.runtime.onMessage.addListener(
+                    function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                        if (request.type == MessageType.fetch + '_return') {
+                            _self.videos.push(request.value);
+                        }
+                    }
+                    );
+            })
+            .then(() => { 
+                _self.isLoadFinished = true;
+            });    
     }
     
     showFavOnly(): void {
         var _self = this;
-        chrome.runtime.sendMessage(
-            {
-                type: MessageType.fetch_fav,
-                value: null,
-                search: {
-                    sort: { key: ['isFavorite', 'date'], unique: false, order: 'prev' },
-                    range: <IDBKeyRange>{ lower: [1, "0000/00/00 00:00:00"], upper: [1, "9999/99/99 23:59:59"], lowerOpen: false, upperOpen: false }
+        Promise.resolve()
+            .then(() => {
+                chrome.runtime.sendMessage(
+                    {
+                        type: MessageType.fetch_fav,
+                        value: null,
+                        search: {
+                            sort: { key: ['isFavorite', 'date'], unique: false, order: 'prev' },
+                            range: <IDBKeyRange>{ lower: [1, "0000/00/00 00:00:00"], upper: [1, "9999/99/99 23:59:59"], lowerOpen: false, upperOpen: false }
 
-                }
-            }
-            );
+                        }
+                    }
+                    );
 
-        chrome.runtime.onMessage.addListener(
-            function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
-                if (request.type == MessageType.fetch_fav + '_return') {
-                    _self.videos.push(request.value);
-                }
-            }
-            );
-
-        setTimeout(function() {
-            _self.isLoadFinished = true;
-        }, 800);
+                chrome.runtime.onMessage.addListener(
+                    function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                        if (request.type == MessageType.fetch_fav + '_return') {
+                            _self.videos.push(request.value);
+                        }
+                    }
+                    );
+            })
+            .then(() => {
+                _self.isLoadFinished = true;
+            });
     }
 
     /**
@@ -223,39 +228,38 @@ class XHistorys extends Vue {
             return;
         }
 
-        chrome.runtime.sendMessage(
-            {
-                type: MessageType.fetch_keyword,
-                value: null,
-                search: {
-                    sort: { key: 'date', unique: false, order: 'prev' },
-                }
-            }
-            );
-
-        chrome.runtime.onMessage.addListener(
-            function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
-                if (request.type == MessageType.fetch_keyword + '_return') {
-                    var videoInfo: IVideoInfo = request.value;
-                    if (videoInfo.title.toLowerCase().indexOf(words.toLowerCase()) > -1) {
-                        _self.videos.push(request.value);
-                    } else {
-                        videoInfo.tags.forEach((tag) => {
-                            if (tag.toLowerCase().indexOf(words.toLowerCase()) > -1) {
-                                setTimeout(function() {
-                                    _self.videos.push(request.value);
-                                }, 50);
-                                return;
-                            }
-                        });
+        Promise.resolve()
+            .then(() => {
+                chrome.runtime.sendMessage(
+                    {
+                        type: MessageType.fetch_keyword,
+                        value: null,
+                        search: {
+                            sort: { key: 'date', unique: false, order: 'prev' },
+                        }
                     }
-                }
-            }
-            );
+                    );
 
-        setTimeout(function() {
-            _self.isLoadFinished = true;
-        }, 800);
+                chrome.runtime.onMessage.addListener(
+                    function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                        if (request.type == MessageType.fetch_keyword + '_return') {
+                            var videoInfo: IVideoInfo = request.value;
+                            if (videoInfo.title.toLowerCase().indexOf(words.toLowerCase()) > -1) {
+                                _self.videos.push(request.value);
+                            } else {
+                                videoInfo.tags.forEach((tag) => {
+                                    if (tag.toLowerCase().indexOf(words.toLowerCase()) > -1) {
+                                        _self.videos.push(request.value);
+                                    }
+                                });
+                            }
+                        }
+                    }
+                    );
+            })
+            .then(() => {
+                _self.isLoadFinished = true;
+            });
     }
     
     
@@ -328,62 +332,65 @@ class XHistorys extends Vue {
      */
     createTags(): void {
         var LIMITS_TAGS = 40;
-
         var _self = this;
-        chrome.runtime.sendMessage(
-            {
-                type: MessageType.fetch_tag,
-                value: null,
-                search: {
-                    sort: { key: 'count', unique: false, order: 'prev' },
-                }
-            }
-            );
-
-        var tagCount = 0;
-        chrome.runtime.onMessage.addListener(
-            function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
-                if (request.type == MessageType.fetch_tag + '_return') {
-                    if (tagCount < LIMITS_TAGS) {
-                        _self.tags.push(request.value);
-                        tagCount++;
-                    }
-                }
-            }
-            );
         
-        setTimeout(function() {
-            if (_self.tags.length <= 0) { return false; }
+        new Promise((reslove, reject) => {
+                chrome.runtime.sendMessage(
+                    {
+                        type: MessageType.fetch_tag,
+                        value: null,
+                        search: {
+                            sort: { key: 'count', unique: false, order: 'prev' },
+                        }
+                    }
+                    );
 
-            var limits = _self.tags.length < LIMITS_TAGS ? _self.tags.length : LIMITS_TAGS;
+                var tagCount = 0;
+                chrome.runtime.onMessage.addListener(
+                    function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                        if (request.type == MessageType.fetch_tag + '_return') {
+                            if (tagCount < LIMITS_TAGS) {
+                                _self.tags.push(request.value);
+                                tagCount++;
+                            } else {
+                                reslove();
+                            }
+                        }
+                    }
+                    );
+            })
+            .then(() => {
+                if (_self.tags.length <= 0) { return false; }
 
-            var maxSize = 38;
-            var minSize = 12;
+                var limits = _self.tags.length < LIMITS_TAGS ? _self.tags.length : LIMITS_TAGS;
 
-            var copyTags = _self.tags;
+                var maxSize = 38;
+                var minSize = 12;
 
-            var max = copyTags[0].count;
-            var min = copyTags[limits - 1].count;
-            
-            _self.tags = [];
-            for (let i = 0; i < limits; i++) {
-                var perc = (max === min) ? 1 : (copyTags[i].count - min) / (max - min);
-                var size = Math.round((maxSize - minSize) * perc + minSize);
-                
-                _self.tags[i] = copyTags[i];
-                _self.tags[i].fontSize = size;
-            }
-            
-            _self.tags.sort((a, b) => {
-                if (a.name < b.name) {
-                    return -1;
-                } else if (a.name > b.name) {
-                    return 1;
-                } else {
-                    return 0;
+                var copyTags = _self.tags;
+
+                var max = copyTags[0].count;
+                var min = copyTags[limits - 1].count;
+
+                _self.tags = [];
+                for (let i = 0; i < limits; i++) {
+                    var perc = (max === min) ? 1 : (copyTags[i].count - min) / (max - min);
+                    var size = Math.round((maxSize - minSize) * perc + minSize);
+
+                    _self.tags[i] = copyTags[i];
+                    _self.tags[i].fontSize = size;
                 }
+
+                _self.tags.sort((a, b) => {
+                    if (a.name < b.name) {
+                        return -1;
+                    } else if (a.name > b.name) {
+                        return 1;
+                    } else {
+                        return 0;
+                    }
+                });
             });
-        }, 3000);
      }
 
 
@@ -401,56 +408,64 @@ class XHistorys extends Vue {
     
     importHistory(): void {
         var importFile = (<HTMLInputElement>document.getElementById('import-file')).files[0];
+        if (!importFile) {
+            alert('インポートファイルを選択してください。');
+            return;
+        }
         var importJson: IVideoInfo[];
         var reader = new FileReader();
-        
-        reader.readAsText(importFile);
-        reader.onload = function() {
-            importJson = JSON.parse(reader.result)
-        }
 
         this.videos = [];
         var _self = this;
         
-        // 履歴用
-        setTimeout(function() {
-            chrome.runtime.sendMessage(
-                {
-                    type: MessageType.register_import,
-                    value: null,
-                    values: importJson
+        new Promise((resolve, reject) => {
+                reader.readAsText(importFile);
+                reader.onload = function() {
+                    importJson = JSON.parse(reader.result)
+                    resolve();
                 }
-                );
-
-            _self.videos = importJson;
-        }, 500);
-        
-        // タグクラウド用
-        setTimeout(function() {
-            var importTags: ITagInfo[] = [];
-            var hash: HashTable<ITagInfo> = {};
-            hash
-            importJson.forEach((videoInfo: IVideoInfo) => {
-                videoInfo.tags.forEach((tag) => {
-                    if (hash[tag]) {
-                        hash[tag] = <ITagInfo>{ name: tag, count: hash[tag].count + 1, fontSize: 0 };
-                    } else {
-                        hash[tag] = <ITagInfo>{ name: tag, count: 1, fontSize: 0 };
-                    }
-                });
-
-            });
-            
-            chrome.runtime.sendMessage(
-                {
-                    type: MessageType.register_import_tags,
-                    values: hash
-                },
-                function() {
-                }
-                );
-        }, 500);
-
+            })
+            .then(() => {
+                return Promise.all([
+                    new Promise((resolve, reject) => {
+                        // 履歴用
+                        chrome.runtime.sendMessage(
+                            {
+                                type: MessageType.register_import,
+                                value: null,
+                                values: importJson
+                            }
+                            );
+    
+                        _self.videos = importJson;
+                    }),
+                    // タグクラウド用
+                    new Promise((resolve, reject) => {
+                        var importTags: ITagInfo[] = [];
+                        var hash: HashTable<ITagInfo> = {};
+                        hash
+                        importJson.forEach((videoInfo: IVideoInfo) => {
+                            videoInfo.tags.forEach((tag) => {
+                                if (hash[tag]) {
+                                    hash[tag] = <ITagInfo>{ name: tag, count: hash[tag].count + 1, fontSize: 0 };
+                                } else {
+                                    hash[tag] = <ITagInfo>{ name: tag, count: 1, fontSize: 0 };
+                                }
+                            });
+    
+                        });
+    
+                        chrome.runtime.sendMessage(
+                            {
+                                type: MessageType.register_import_tags,
+                                values: hash
+                            },
+                            function() {
+                            }
+                            );
+                    })
+            ]);
+        });
     }
     
     destroy(): void{
