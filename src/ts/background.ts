@@ -161,7 +161,7 @@ class Background {
                 chrome.runtime.sendMessage(
                     {
                         type: request.type + '_return',
-                        value: result
+                        values: result
                     }
             );
         });
@@ -179,7 +179,7 @@ class Background {
                 chrome.runtime.sendMessage(
                     {
                         type: request.type + '_return',
-                        value: result
+                        values: result
                     }
                 );
             });

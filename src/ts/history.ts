@@ -13,7 +13,6 @@ class XHistorys extends Vue {
     page: number = 0;
     dispSize: number = 20;
     isLoadFinished = false;
-    keywords = '';
     
     // sidebar
     exportData: any;
@@ -34,7 +33,7 @@ class XHistorys extends Vue {
                 dispSize: this.dispSize,
                 videos: this.videos,
                 isShowFavOnly: false,
-                keyword: this.keywords,
+                keywords: '',
                 // sidebar
                 link: this.link,
                 isFinishedExport: false,
@@ -65,14 +64,12 @@ class XHistorys extends Vue {
                 },
                 showAllOrFav: function() {
                     this.isLoadFinished = false;
-                    var _self = this;
                     this.isShowFavOnly = !this.isShowFavOnly;
 
                     if (this.isShowFavOnly) {
-                        _self.videos = [];
                         this.showFavOnly();
                     } else {
-                        window.location.reload(true);
+                        this.fetch();
                     }
                     this.page = 0;
                 },
@@ -155,61 +152,52 @@ class XHistorys extends Vue {
      */
     fetch(): void {
         var _self = this;
-        Promise.resolve()
-            .then(() => {
-                chrome.runtime.sendMessage(
-                    {
-                        type: MessageType.fetch,
-                        value: null,
-                        search: {
-                            sort: { key: 'date', unique: false, order: 'prev' },
-                        }
-                    }
-                    );
+        chrome.runtime.sendMessage(
+            {
+                type: MessageType.fetch,
+                value: null,
+                search: {
+                    sort: { key: 'date', unique: false, order: 'prev' },
+                }
+            }
+            );
 
-                chrome.runtime.onMessage.addListener(
-                    function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
-                        if (request.type == MessageType.fetch + '_return') {
-                            _self.videos.push(request.value);
-                        }
-                    }
-                    );
-            })
-            .then(() => { 
-                _self.isLoadFinished = true;
-            });    
+        chrome.runtime.onMessage.addListener(
+            function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                if (request.type == MessageType.fetch + '_return') {
+                    _self.videos = request.values
+                    _self.isLoadFinished = true;
+                }
+            }
+            );
     }
-
+    
     /**
      * お気に入りのみ表示
      */
     showFavOnly(): void {
         var _self = this;
-        Promise.resolve()
-            .then(() => {
-                chrome.runtime.sendMessage(
-                    {
-                        type: MessageType.fetch_fav,
-                        value: null,
-                        search: {
-                            sort: { key: ['isFavorite', 'date'], unique: false, order: 'prev' },
-                            range: <IDBKeyRange>{ lower: [1, "0000/00/00 00:00:00"], upper: [1, "9999/99/99 23:59:59"], lowerOpen: false, upperOpen: false }
 
-                        }
-                    }
-                    );
+        chrome.runtime.sendMessage(
+            {
+                type: MessageType.fetch_fav,
+                value: null,
+                search: {
+                    sort: { key: ['isFavorite', 'date'], unique: false, order: 'prev' },
+                    range: <IDBKeyRange>{ lower: [1, "0000/00/00 00:00:00"], upper: [1, "9999/99/99 23:59:59"], lowerOpen: false, upperOpen: false }
 
-                chrome.runtime.onMessage.addListener(
-                    function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
-                        if (request.type == MessageType.fetch_fav + '_return') {
-                            _self.videos.push(request.value);
-                        }
-                    }
-                    );
-            })
-            .then(() => {
-                _self.isLoadFinished = true;
-            });
+                }
+            }
+            );
+
+        chrome.runtime.onMessage.addListener(
+            function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                if (request.type == MessageType.fetch_fav + '_return') {
+                    _self.videos = request.values;
+                    _self.isLoadFinished = true;
+                }
+            }
+            );
     }
 
     /**
@@ -218,48 +206,56 @@ class XHistorys extends Vue {
      */
     search(words: string): void {
         this.isLoadFinished = false;
-        this.keywords = words;
+        (<any>this.$data).keywords = words;
         var _self = this;
-        _self.videos = [];
 
         if (words.trim().length == 0) {
             // 再表示
-            window.location.reload(true);
+            this.fetch();
             return;
         }
 
-        Promise.resolve()
-            .then(() => {
-                chrome.runtime.sendMessage(
-                    {
-                        type: MessageType.fetch_keyword,
-                        value: null,
-                        search: {
-                            sort: { key: 'date', unique: false, order: 'prev' },
-                        }
-                    }
-                    );
+        var videoObjects: IVideoInfo[] = [];
+        chrome.runtime.sendMessage(
+            {
+                type: MessageType.fetch_keyword,
+                value: null,
+                search: {
+                    sort: { key: 'date', unique: false, order: 'prev' },
+                }
+            }
+            );
 
-                chrome.runtime.onMessage.addListener(
-                    function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
-                        if (request.type == MessageType.fetch_keyword + '_return') {
-                            var videoInfo: IVideoInfo = request.value;
-                            if (videoInfo.title.toLowerCase().indexOf(words.toLowerCase()) > -1) {
-                                _self.videos.push(request.value);
-                            } else {
-                                videoInfo.tags.forEach((tag) => {
-                                    if (tag.toLowerCase().indexOf(words.toLowerCase()) > -1) {
-                                        _self.videos.push(request.value);
-                                    }
-                                });
-                            }
+        chrome.runtime.onMessage.addListener(
+            function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                if (request.type == MessageType.fetch_keyword + '_return') {
+                    var videos: IVideoInfo[] = request.values;
+
+                    var lowWords = words.toLowerCase();
+
+
+                    videos.forEach((video) => {
+                        if (video.title.toLowerCase().indexOf(lowWords) > -1) {
+                            videoObjects.push(video);
                         }
-                    }
-                    );
-            })
-            .then(() => {
-                _self.isLoadFinished = true;
-            });
+                        else {
+                            video.tags.forEach((tag) => {
+                                if (tag.toLowerCase().indexOf(lowWords) > -1) {
+                                    videoObjects.push(video);
+                                }
+                            })
+                        }
+                    });
+                    
+                    _self.videos = videoObjects;
+                    _self._cleanup = _self.$compile(document.getElementById('main'));
+                    _self._cleanup();
+                    _self.isLoadFinished = true;
+                }
+            }
+            );
+
+
     }
     
     /**
@@ -355,12 +351,10 @@ class XHistorys extends Vue {
                 chrome.runtime.onMessage.addListener(
                     function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
                         if (request.type == MessageType.fetch_tag + '_return') {
-                            if (tagCount < LIMITS_TAGS) {
-                                _self.tags.push(request.value);
-                                tagCount++;
-                            } else {
-                                reslove();
+                            for (let i = 0; i < LIMITS_TAGS && i < request.values.length; i++) {
+                                _self.tags.push(request.values[i]);
                             }
+                            reslove();
                         }
                     }
                     );

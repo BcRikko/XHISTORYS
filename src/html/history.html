@@ -34,7 +34,7 @@
                 </ul>
             </div><!--#pagination-->
 
-            <div id="videos" v-repeat="video :displayVideos">
+            <div class="videos" v-repeat="video :displayVideos">
                 <div id="{{video.id}}" class="video-card pull-left">
                     <div class="video-icons">
                         <i class="video-fav glyphicon glyphicon-heart video-fav-{{video.isFavorite ? 'true' : 'false'}}" v-on="click: fav(this, $index)"></i>

@@ -121,12 +121,18 @@ class IDBLibrary {
         } else {
             req = store.openCursor();
         } 
+        
+        var object: any = [];
+        
         req.onsuccess = function() {
             var cursor = <IDBCursorWithValue>req.result;
-            if (cursor && callback) {
-                callback(cursor.value);
-                cursor.continue();
+            
+            if (!req.result) {
+                callback(object);
             }
+            
+            object.push(cursor.value);
+            cursor.continue();
         }
         
         req.onerror = () => {
