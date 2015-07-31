@@ -19,7 +19,10 @@ var idbInfo: IDBInfo = {
     storeName: 'IDBLibrary',
     version: 1,
     key: { keyPath: 'id', autoIncrement: false },
-    sort: [{key: ['date'], unique: false, order: 'prev'}, {key: ['isFavorite', 'date'], unique: false, order: 'prev'}]
+    sort: [
+        { key: ['date'], unique: false, order: 'prev' },
+        { key: ['isFavorite', 'date'], unique: false, order: 'prev' }
+    ]
 };
 
 interface ITagInfo {
@@ -37,6 +40,20 @@ var tagInfo: IDBInfo = {
     sort: [{key: ['count'], unique:false, order: 'prev'}]
 };
 
+interface ICalInfo {
+    date: string;
+    ids: string[];
+}
+
+var calInfo: IDBInfo = {
+    dbName: 'IDBCalendar',
+    storeName: 'Calendar',
+    version: 1,
+    key: { keyPath: 'date', autoIncrement: false },
+    sort: [{ key: ['date'], unique: false, order: 'prev' }]
+};
+
+
 interface HashTable<T> {
     [key: string]: T;
 }
@@ -45,18 +62,24 @@ class MessageType {
     static register = 'register';
     static register_fav = 'register_fav';
     static register_tags = 'register_tags';
+    static register_calendar = 'register_calendar';
     static register_import = 'register_import';
     static register_import_tags = 'register_import_tags';
+    static register_import_calendar = 'register_import_calendar';
 
     static search = 'search';
+    static search_id = 'search_id';
     static search_count = 'search_count';
     static search_tag = 'search_tag';
     static search_import_tag = 'search_import_tag';
+    static search_calendar = 'search_calendar';
+    static search_calendar_watch = 'search_calendar_watch';
     
     static fetch = 'fetch';
     static fetch_fav = 'fetch_fav';
     static fetch_tag = 'fetch_tag';
     static fetch_keyword = 'fetch_keyword';
+    static fetch_calendar = 'fetch_calendar';
     
     static del = 'delete';
     static allDelete = 'allDelete';

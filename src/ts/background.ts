@@ -4,10 +4,12 @@
 
 var idb = new IDBLibrary(idbInfo);
 var idbTags = new IDBLibrary(tagInfo);
+var idbCalendar = new IDBLibrary(calInfo);
 
 chrome.runtime.onMessage.addListener(
     function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
         var background = new Background();
+        
         switch (request.type) {
             case MessageType.register:
             case MessageType.register_fav:
@@ -17,6 +19,9 @@ chrome.runtime.onMessage.addListener(
             case MessageType.search:
                 background.search(request, sendResponse);
                 break;
+            case MessageType.search_id:
+                background.searchId(request, sendResponse);
+                break;    
             case MessageType.search_count:
                 background.searchForTabs(request, sendResponse);
                 break;
@@ -47,6 +52,19 @@ chrome.runtime.onMessage.addListener(
                 break;
             case MessageType.fetch_tag:
                 background.fetchTag(request, sendResponse);
+                break;
+            case MessageType.register_calendar:
+            case MessageType.register_import_calendar:
+                background.registerCalendar(request, sendResponse);
+                break;
+            case MessageType.search_calendar:
+                background.searchCalendar(request, sendResponse);
+                break;
+            case MessageType.search_calendar_watch:
+                background.searchCalendarForTabs(request, sendResponse);
+                break;
+            case MessageType.fetch_calendar:
+                background.fetchCalendar(request, sendResponse);
                 break;
             default:
                 break;
@@ -88,7 +106,7 @@ class Background {
 
         if (request.values) {
             for (var key in request.values) {
-                idbTags.register(request.values[key])
+                idbTags.register(request.values[key]);
             }
         } else {
             idbTags.register(request.value);
@@ -100,10 +118,31 @@ class Background {
     }
 
     /**
+     * カレンダー登録（カレンダー用）
+     * @param request
+     * @param callback
+     */      
+    registerCalendar(request: IRequest, callback: Function): void{
+        console.log('background.js: registerCalendar');
+        
+        if (request.values) {
+            for (var key in request.values) {
+                idbCalendar.register(request.values[key]);
+            }
+        } else {
+            idbCalendar.register(request.value);
+        }
+        
+        if (callback) {
+            callback(request);
+        }
+    }
+    
+    /**
      * 検索
      * @param request
      * @param callback  ※基本はcallbackではなくsendMessageを返す
-     */    
+     */
     search(request: IRequest, callback?: Function): void {
         console.log('background.js: search');
         idb.search(request.value.id, function(result:IVideoInfo) {
@@ -116,6 +155,23 @@ class Background {
         });
     }
 
+    /**
+     * 検索(ID付き)
+     * @param request
+     * @param callback  ※基本はcallbackではなくsendMessageを返す
+     */    
+    searchId(request: IRequest, callback?: Function): void {
+        console.log('background.js: searchId');
+        idb.search(request.value.id, function(result:IVideoInfo) {
+            chrome.runtime.sendMessage(
+                {
+                    type: request.type + '_return' + request.value.id,
+                    value: result
+                }
+                );
+        });
+    }
+    
     /**
      * タグ検索
      * @param request
@@ -139,16 +195,50 @@ class Background {
      * @param callback  ※基本はcallbackではなくsendMessageを返す
      */
     searchForTabs(request: IRequest, callback?: Function): void{
+        console.log('background.js: searchForTabs');
         idb.search(request.value.id, function(result: IVideoInfo) {
             chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
                 chrome.tabs.sendMessage(tabs[0].id, {
-                    type: MessageType.search_count + '_return',
+                    type: request.type + '_return',
                     value: result
                 }, function(response) { });
             });
         });
     }
 
+    /**
+     * カレンダー検索
+     * @param request
+     * @param callback  ※基本はcallbackではなくsendMessageを返す
+     */
+    searchCalendar(request: IRequest, callback?: Function): void{
+        console.log('background.js: searchCalendar');
+        idbCalendar.search(request.value, function(result: ICalInfo) {
+            chrome.runtime.sendMessage(
+                {
+                    type: request.type + '_return',
+                    value: result
+                }
+                );
+        });
+    }
+
+    /**
+     * カレンダー検索（Content Script用）
+     * @param request
+     * @param callback  ※基本はcallbackではなくsendMessageを返す
+     */    
+    searchCalendarForTabs(request: IRequest, callback?: Function): void{
+        console.log('background.js: searchCalendar');
+        idbCalendar.search(request.value, function(result: IVideoInfo) {
+            chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    type: request.type + '_return',
+                    value: result
+                }, function(response) { });
+            });
+        });
+    }
     /**
      * 全視聴履歴検索
      * @param request
@@ -184,7 +274,25 @@ class Background {
                 );
             });
     }
-    
+
+    /**
+     * 全タグ検索
+     * @param request
+     * @param callback  ※基本はcallbackではなくsendMessageを返す
+     */    
+    fetchCalendar(request: IRequest, callback?: Function): void{
+        console.log('background.js: fetch_calendar');
+        idbCalendar.fetch(request,
+            function(result: ICalInfo) {
+                chrome.runtime.sendMessage(
+                    {
+                        type: request.type + '_return',
+                        values: result
+                    }
+                );
+            });
+    }
+
     /**
      * 削除
      * @param request
@@ -224,6 +332,7 @@ class Background {
         console.log('background.js: destroy');
         idb.destroy();
         idbTags.destroy();
+        idbCalendar.destroy();
         if (callback) {
             callback(request);
         }

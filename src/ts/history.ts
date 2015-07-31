@@ -21,6 +21,9 @@ class XHistorys extends Vue {
     
     tags: ITagInfo[] = [];
     
+    calendar: ICalInfo[] = [];
+    MONTH = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+    currentDate = { year: 0, month: 0 };
     
     constructor() {
         super(false);
@@ -37,7 +40,10 @@ class XHistorys extends Vue {
                 // sidebar
                 link: this.link,
                 isFinishedExport: false,
-                tags: this.tags
+                tags: this.tags,
+                weeks: ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'],
+                currentDate: this.currentDate,
+                calendar: this.calendar
             },
             methods: {
                 fav: this.fav,
@@ -84,6 +90,27 @@ class XHistorys extends Vue {
                     }
                 },
                 // sidebar
+                moveLastMonth: function() {
+                    if (this.currentDate.month == 1) {
+                        this.currentDate.year--;
+                        this.currentDate.month = 12;
+                    }
+                    else {
+                        this.currentDate.month--;
+                    }
+                    this.createCalendar();
+                },
+                moveNextMonth: function() {
+                    if (this.currentDate.month == 12) {
+                        this.currentDate.year++;
+                        this.currentDate.month = 1;
+                    }
+                    else {
+                        this.currentDate.month++;
+                    }
+                    this.createCalendar();
+                },
+                searchWithDay: this.searchWithDay,
                 exportHistory: this.exportHistory,
                 importHistory: this.importHistory,
                 destroy: this.destroy
@@ -92,6 +119,12 @@ class XHistorys extends Vue {
                 this.isLoadFinished = false;
                 this.fetch(),
                 this.createTags()
+                
+                var today = new Date();
+                this.currentDate.year = today.getFullYear();
+                this.currentDate.month = today.getMonth() + 1;
+                
+                this.createCalendar();
             },
             ready: function() {
                 this.isLoadFinished = true;
@@ -117,6 +150,12 @@ class XHistorys extends Vue {
                 },
                 pageCount: function(): number {
                     return Math.ceil(this.videos.length / this.dispSize);
+                },
+                calDisplay: function() {
+                    return {
+                        year: this.currentDate.year,
+                        month: this.MONTH[this.currentDate.month - 1]
+                    };
                 }
             },
             filters: {
@@ -166,6 +205,7 @@ class XHistorys extends Vue {
             function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
                 if (request.type == MessageType.fetch + '_return') {
                     _self.videos = request.values
+                    _self.page = 0;
                     _self.isLoadFinished = true;
                 }
             }
@@ -194,6 +234,7 @@ class XHistorys extends Vue {
             function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
                 if (request.type == MessageType.fetch_fav + '_return') {
                     _self.videos = request.values;
+                    _self.page = 0;
                     _self.isLoadFinished = true;
                 }
             }
@@ -250,6 +291,7 @@ class XHistorys extends Vue {
                     _self.videos = videoObjects;
                     _self._cleanup = _self.$compile(document.getElementById('main'));
                     _self._cleanup();
+                    _self.page = 0;
                     _self.isLoadFinished = true;
                 }
             }
@@ -394,6 +436,144 @@ class XHistorys extends Vue {
      }
 
     /**
+     * カレンダー生成
+     */
+    createCalendar() {
+        // 1日の曜日
+        var firstDay = new Date(this.currentDate.year, this.currentDate.month - 1, 1).getDay();
+        // 晦日の日にち
+        var lastDate = new Date(this.currentDate.year, this.currentDate.month, 0).getDate();
+        // 日にちのカウント
+        var dayIdx = 1;
+
+        var registeredCal: number[] = [];
+
+        new Promise((resolve, reject) => {
+            var yyyymm = this.currentDate.year + '/' + paddingForDate(this.currentDate.month) + '/';
+            var beginDate = yyyymm + '01';
+            var endDate = yyyymm + lastDate;
+
+            chrome.runtime.sendMessage(
+                {
+                    type: MessageType.fetch_calendar,
+                    value: null,
+                    search: {
+                        sort: { key: 'date', unique: false, order: 'next' },
+                        range: <IDBKeyRange>{ lower: [beginDate], upper: [endDate], lowerOpen: false, upperOpen: false }
+                    }
+                }
+                );
+            chrome.runtime.onMessage.addListener(
+                function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                    if (request.type == MessageType.fetch_calendar + '_return') {
+                        request.values.forEach((calInfo: ICalInfo) => {
+                            var day = +calInfo.date.substr(8, 2);
+                            registeredCal.push(day);
+                        });
+                        resolve();
+                    }
+                }
+                ); 
+        })
+        .then(() => {
+            var calendar: any = [];
+            for (let w = 0; w < 6; w++) {
+                var week: any = [];
+
+                // 空白行をなくすため
+                if (lastDate < dayIdx) { break; }
+
+                for (let d = 0; d < 7; d++) {
+                    var hasWatched = false;
+
+                    if (w == 0 && d < firstDay) {
+                        week[d] = { day: '', watched: hasWatched };
+                    } else if (w == 6 && lastDate < dayIdx) {
+                        week[d] = { day: '', watched: hasWatched };
+                        dayIdx++;
+                    } else if (lastDate < dayIdx) {
+                        week[d] = { day: '', watched: hasWatched };
+                        dayIdx++;
+                    } else {
+                        if (registeredCal.indexOf(dayIdx) != -1) {
+                            hasWatched = true;
+                        }
+                        week[d] = { day: dayIdx, watched: hasWatched };
+                        dayIdx++;
+                    }
+                }
+
+                calendar.push(week);
+            }
+            this.calendar = calendar;
+        });
+    }
+
+    /**
+     * カレンダーで検索
+     * @param day      検索する日
+     * @param watched  検索する日が有効か
+     */    
+    searchWithDay(day: number, watched: boolean) {
+        if (!watched) { return }
+        
+        this.isLoadFinished = false;
+        var targetDay = this.currentDate.year + '/' + paddingForDate(this.currentDate.month) + '/' + paddingForDate(day);
+        var calInfo: ICalInfo;
+        
+        new Promise((resolve, reject) => {
+            chrome.runtime.sendMessage(
+                {
+                    type: MessageType.search_calendar,
+                    value: targetDay
+                }
+                );
+            chrome.runtime.onMessage.addListener(
+                function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                    if (request.type == MessageType.search_calendar + '_return') {
+                        calInfo = request.value;
+                        resolve();
+                    }
+                }
+                );
+        })
+        .then(() => {
+            var _self = this;
+            // this.videos = [];
+            var videoObjects: IVideoInfo[] = [];
+            
+            new Promise((resolve, reject) => {
+                calInfo.ids.forEach((id) => {
+                        chrome.runtime.sendMessage(
+                            {
+                                type: MessageType.search_id,
+                                value: { id: id }
+                            }
+                            );
+
+                        chrome.runtime.onMessage.addListener(
+                            function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                                if (request.type == MessageType.search_id + '_return' + id) {
+                                    videoObjects.push(request.value);
+                                    
+                                    if (videoObjects.length == calInfo.ids.length) {
+                                        resolve();
+                                    }
+                                }
+                            }
+                            );
+                });
+            }).then(() => {
+                _self.videos = videoObjects;
+                _self._cleanup = _self.$compile(document.getElementById('main'));
+                _self._cleanup();
+                _self.page = 0;
+                _self.isLoadFinished = true;
+            })
+        });
+    }
+    
+    /**
      * 視聴履歴出力
      */
     exportHistory(): void {
@@ -464,6 +644,31 @@ class XHistorys extends Vue {
                             {
                                 type: MessageType.register_import_tags,
                                 values: hash
+                            },
+                            function() {
+                            }
+                            );
+                    }),
+                    // カレンダー用
+                    new Promise((resolve, reject) => {
+                        var calendar: HashTable<ICalInfo> = {};
+                        
+                        importJson.forEach((videoInfo: IVideoInfo) => {
+                            var date = videoInfo.date.match(/[0-9]{4}\/[0-9]{2}\/[0-9]{2}/)[0];
+
+                            if (calendar[date]) {
+                                var ids = calendar[date].ids;
+                                ids.push(videoInfo.id);
+                                calendar[date] = { date: date, ids: ids };
+                            } else {
+                                calendar[date] = { date: date, ids: [videoInfo.id] };
+                            }
+                        });
+    
+                        chrome.runtime.sendMessage(
+                            {
+                                type: MessageType.register_import_calendar,
+                                values: calendar
                             },
                             function() {
                             }

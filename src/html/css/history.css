@@ -119,7 +119,7 @@ header {
     text-align: center;
 }
 
-
+/* タグリスト */
 input[type="checkbox"].is-showtags{
   display: none;
 }
@@ -180,6 +180,8 @@ input[type="checkbox"].is-showtags:checked + .tags{
     float: left;
 }
 
+
+/* タグクラウド */
 #tag-cloud {
     padding: 3px 3px;
     width: auto;
@@ -193,6 +195,51 @@ input[type="checkbox"].is-showtags:checked + .tags{
     display: inline-block;
 }
 
+/* カレンダー */
+#calendar-nav {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#calendar-nav span {
+    display: inline-block;
+    width: 200px;
+}
+
+#calendar-nav i:hover {
+    cursor: pointer;
+}
+
+.table th, td{
+    background-color: white;
+    text-align: center;
+}
+
+#calendar th:first-child {
+    background-color: #FEEEFF;
+}
+#calendar td:first-child {
+    background-color: #FEEEFF;
+}
+#calendar th:nth-child(7) {
+    background-color: #DFFFFF
+}
+#calendar td:nth-child(7) {
+    background-color: #DFFFFF
+}
+
+#calendar td:hover {
+    opacity: 0.6;
+}
+
+.watched-true {
+    color: #0000ff;
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: bold;  
+}
+
+/* 読み込み */
 #loading {
     clear: both;
     top: 0;

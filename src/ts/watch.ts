@@ -96,13 +96,13 @@ $(function() {
                 }),
                 
                 // タグクラウドの登録
-                new Promise((reslove, reject) => {
+                new Promise((resolve, reject) => {
                     if (alreadyInfo) return;
                     videoInfo.tags.forEach((tag) => {
                         // var tagPromise = new Promise((resolve, reject) => {
                         var tagCount = 1;
 
-                        new Promise((reslove, reject) => {
+                        new Promise((resolve, reject) => {
                             chrome.runtime.sendMessage(
                                 {
                                     type: MessageType.search_tag,
@@ -116,7 +116,7 @@ $(function() {
                                         if (request.value && request.value.count > 0) {
                                             tagCount = request.value.count + 1;
                                         }
-                                        reslove();
+                                        resolve();
                                     }
                                 }
                                 );
@@ -130,6 +130,46 @@ $(function() {
                                 function() {
                                 });
                         });
+                    });
+                }),
+                
+                // カレンダーの登録
+                new Promise((resolve, reject) => {
+                    var today = videoInfo.date.substr(0, 10);
+                    var calendar: ICalInfo;
+                    
+                    new Promise((resolve, reject) => {
+                        chrome.runtime.sendMessage(
+                            {
+                                type: MessageType.search_calendar_watch,
+                                value: today
+                            }
+                            );
+                        chrome.runtime.onMessage.addListener(
+                            function(request: IRequest, sender: chrome.runtime.MessageSender, sendResponse: Function) {
+                                if (request.type == MessageType.search_calendar_watch + '_return') {
+                                    if (request.value) {
+                                        var ids = (<ICalInfo>request.value).ids;
+                                        ids.push(videoInfo.id);
+
+                                        calendar = { date: today, ids: ids };
+                                    }
+                                    else {
+                                        calendar = { date: today, ids: [videoInfo.id] };
+                                    }
+                                    resolve();
+                                }
+                            }
+                            );
+                    })
+                    .then(() => {
+                        chrome.runtime.sendMessage(
+                            {
+                                type: MessageType.register_calendar,
+                                value: calendar
+                            },
+                            function() {
+                            });
                     });
                 })
             ])

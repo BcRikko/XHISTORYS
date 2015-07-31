@@ -129,6 +129,7 @@ class IDBLibrary {
             
             if (!req.result) {
                 callback(object);
+                return;
             }
             
             object.push(cursor.value);

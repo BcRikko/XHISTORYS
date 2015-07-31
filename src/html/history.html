@@ -85,7 +85,23 @@
                 <span v-repeat="tag: tags" class="tag" style="font-size:{{tag.fontSize}}px"><a v-on="click: search(tag.name)">{{tag.name}}</a></span>
             </div>
             <div id="calender" class="well">
-                calender
+                <div id="calendar-nav">
+                    <i class="glyphicon glyphicon-menu-left" v-on="click: moveLastMonth"></i>
+                    <span>{{calDisplay.year}} - {{calDisplay.month}}</span>
+                    <i class="glyphicon glyphicon-menu-right"  v-on="click: moveNextMonth"></i>
+                </div>
+                <table id="calendar" class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th v-repeat="week: weeks">{{week}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-repeat="week: calendar">
+                            <td v-repeat="list: week" class="watched-{{list.watched}}" v-on="click: searchWithDay(list.day, list.watched)">{{list.day}}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             <div class="well" id="settings">
                 <div class="form-group">
