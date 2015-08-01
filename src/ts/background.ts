@@ -14,57 +14,57 @@ chrome.runtime.onMessage.addListener(
             case MessageType.register:
             case MessageType.register_fav:
             case MessageType.register_import:
-                background.register(request, sendResponse);
+                background.register(request, sender, sendResponse);
                 break;
             case MessageType.search:
-                background.search(request, sendResponse);
+                background.search(request, sender, sendResponse);
                 break;
             case MessageType.search_id:
-                background.searchId(request, sendResponse);
+                background.searchId(request, sender, sendResponse);
                 break;    
             case MessageType.search_count:
-                background.searchForTabs(request, sendResponse);
+                background.searchForTabs(request, sender, sendResponse);
                 break;
             case MessageType.fetch:
             case MessageType.fetch_fav:
             case MessageType.fetch_keyword:
-                background.fetch(request, sendResponse);
+                background.fetch(request, sender, sendResponse);
                 break;
             case MessageType.del:
-                background.del(request, sendResponse);
+                background.del(request, sender, sendResponse);
                 break;
             case MessageType.allDelete:
-                background.allDelete(request, sendResponse);
+                background.allDelete(request, sender, sendResponse);
                 break;
             case MessageType.destroy:
-                background.destroy(request, sendResponse);
+                background.destroy(request, sender, sendResponse);
                 break;
             case MessageType.callApi_thumb:
-                background.callApi(request, sendResponse);
+                background.callApi(request, sender, sendResponse);
                 break;
             case MessageType.register_tags:
             case MessageType.register_import_tags:
-                background.registerTags(request, sendResponse);
+                background.registerTags(request, sender, sendResponse);
                 break;
             case MessageType.search_tag:
             case MessageType.search_import_tag:    
-                background.searchTag(request, sendResponse);
+                background.searchTag(request, sender, sendResponse);
                 break;
             case MessageType.fetch_tag:
-                background.fetchTag(request, sendResponse);
+                background.fetchTag(request, sender, sendResponse);
                 break;
             case MessageType.register_calendar:
             case MessageType.register_import_calendar:
-                background.registerCalendar(request, sendResponse);
+                background.registerCalendar(request, sender, sendResponse);
                 break;
             case MessageType.search_calendar:
-                background.searchCalendar(request, sendResponse);
+                background.searchCalendar(request, sender, sendResponse);
                 break;
             case MessageType.search_calendar_watch:
-                background.searchCalendarForTabs(request, sendResponse);
+                background.searchCalendarForTabs(request, sender, sendResponse);
                 break;
             case MessageType.fetch_calendar:
-                background.fetchCalendar(request, sendResponse);
+                background.fetchCalendar(request, sender, sendResponse);
                 break;
             default:
                 break;
@@ -81,7 +81,7 @@ class Background {
      * @param request
      * @param callback
      */
-    register(request: IRequest, callback: Function): void {
+    register(request: IRequest, sender: chrome.runtime.MessageSender, callback: Function): void {
         console.log('background.js: register');
         
         if (request.values) {
@@ -101,7 +101,7 @@ class Background {
      * @param request
      * @param callback
      */    
-    registerTags(request: IRequest, callback: Function): void{
+    registerTags(request: IRequest, sender: chrome.runtime.MessageSender, callback: Function): void{
         console.log('background.js: registerTags');
 
         if (request.values) {
@@ -122,7 +122,7 @@ class Background {
      * @param request
      * @param callback
      */      
-    registerCalendar(request: IRequest, callback: Function): void{
+    registerCalendar(request: IRequest, sender: chrome.runtime.MessageSender, callback: Function): void{
         console.log('background.js: registerCalendar');
         
         if (request.values) {
@@ -143,7 +143,7 @@ class Background {
      * @param request
      * @param callback  ※基本はcallbackではなくsendMessageを返す
      */
-    search(request: IRequest, callback?: Function): void {
+    search(request: IRequest, sender: chrome.runtime.MessageSender, callback?: Function): void {
         console.log('background.js: search');
         idb.search(request.value.id, function(result:IVideoInfo) {
             chrome.runtime.sendMessage(
@@ -160,7 +160,7 @@ class Background {
      * @param request
      * @param callback  ※基本はcallbackではなくsendMessageを返す
      */    
-    searchId(request: IRequest, callback?: Function): void {
+    searchId(request: IRequest, sender: chrome.runtime.MessageSender, callback?: Function): void {
         console.log('background.js: searchId');
         idb.search(request.value.id, function(result:IVideoInfo) {
             chrome.runtime.sendMessage(
@@ -177,15 +177,13 @@ class Background {
      * @param request
      * @param callback  ※基本はcallbackではなくsendMessageを返す
      */
-    searchTag(request: IRequest, callback?: Function): void{
+    searchTag(request: IRequest, sender: chrome.runtime.MessageSender, callback?: Function): void{
         console.log('background.js: searchTag');
         idbTags.search(request.value, function(result: ITagInfo) {
-            chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    type: request.type + '_return',
-                    value: result
-                }, function(response) { });
-            });
+            chrome.tabs.sendMessage(sender.tab.id, {
+                type: request.type + '_return',
+                value: result
+            }, function(response) { });
         });
     }
 
@@ -194,15 +192,13 @@ class Background {
      * @param request
      * @param callback  ※基本はcallbackではなくsendMessageを返す
      */
-    searchForTabs(request: IRequest, callback?: Function): void{
+    searchForTabs(request: IRequest, sender: chrome.runtime.MessageSender, callback?: Function): void{
         console.log('background.js: searchForTabs');
         idb.search(request.value.id, function(result: IVideoInfo) {
-            chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    type: request.type + '_return',
-                    value: result
-                }, function(response) { });
-            });
+            chrome.tabs.sendMessage(sender.tab.id, {
+                type: request.type + '_return',
+                value: result
+            }, function(response) { });
         });
     }
 
@@ -211,7 +207,7 @@ class Background {
      * @param request
      * @param callback  ※基本はcallbackではなくsendMessageを返す
      */
-    searchCalendar(request: IRequest, callback?: Function): void{
+    searchCalendar(request: IRequest, sender: chrome.runtime.MessageSender, callback?: Function): void{
         console.log('background.js: searchCalendar');
         idbCalendar.search(request.value, function(result: ICalInfo) {
             chrome.runtime.sendMessage(
@@ -228,15 +224,13 @@ class Background {
      * @param request
      * @param callback  ※基本はcallbackではなくsendMessageを返す
      */    
-    searchCalendarForTabs(request: IRequest, callback?: Function): void{
+    searchCalendarForTabs(request: IRequest, sender: chrome.runtime.MessageSender, callback?: Function): void{
         console.log('background.js: searchCalendar');
         idbCalendar.search(request.value, function(result: IVideoInfo) {
-            chrome.tabs.query({ active: true, currentWindow: true }, function(tabs) {
-                chrome.tabs.sendMessage(tabs[0].id, {
-                    type: request.type + '_return',
-                    value: result
-                }, function(response) { });
-            });
+            chrome.tabs.sendMessage(sender.tab.id, {
+                type: request.type + '_return',
+                value: result
+            }, function(response) { });
         });
     }
     /**
@@ -244,7 +238,7 @@ class Background {
      * @param request
      * @param callback  ※基本はcallbackではなくsendMessageを返す
      */
-    fetch(request: IRequest, callback?: Function): void {
+    fetch(request: IRequest, sender: chrome.runtime.MessageSender, callback?: Function): void {
         console.log('background.js: fetch');
         idb.fetch(request,
             function(result: IVideoInfo) {
@@ -262,7 +256,7 @@ class Background {
      * @param request
      * @param callback  ※基本はcallbackではなくsendMessageを返す
      */    
-    fetchTag(request: IRequest, callback?: Function): void{
+    fetchTag(request: IRequest, sender: chrome.runtime.MessageSender, callback?: Function): void{
         console.log('background.js: fetch_tag');
         idbTags.fetch(request,
             function(result: ITagInfo) {
@@ -280,7 +274,7 @@ class Background {
      * @param request
      * @param callback  ※基本はcallbackではなくsendMessageを返す
      */    
-    fetchCalendar(request: IRequest, callback?: Function): void{
+    fetchCalendar(request: IRequest, sender: chrome.runtime.MessageSender, callback?: Function): void{
         console.log('background.js: fetch_calendar');
         idbCalendar.fetch(request,
             function(result: ICalInfo) {
@@ -298,7 +292,7 @@ class Background {
      * @param request
      * @param callback
      */
-    del(request: IRequest, callback?: Function): void {
+    del(request: IRequest, sender: chrome.runtime.MessageSender, callback?: Function): void {
         console.log('background.js: delete');
         idb.delete(request.value.id, function() {
             chrome.runtime.sendMessage(
@@ -315,7 +309,7 @@ class Background {
      * @param request
      * @param callback
      */    
-    allDelete(request: IRequest, callback: Function): void {
+    allDelete(request: IRequest, sender: chrome.runtime.MessageSender, callback: Function): void {
         console.log('background.js: allDelete');
         idb.allDelete();
         if (callback) {
@@ -328,7 +322,7 @@ class Background {
      * @param request
      * @param callback
      */
-    destroy(request: IRequest, callback?: Function): void {
+    destroy(request: IRequest, sender: chrome.runtime.MessageSender, callback?: Function): void {
         console.log('background.js: destroy');
         idb.destroy();
         idbTags.destroy();
@@ -343,7 +337,7 @@ class Background {
      * @param request
      * @param callback(必須)
      */
-    callApi(request: IRequest, callback: Function): void {
+    callApi(request: IRequest, sender: chrome.runtime.MessageSender, callback: Function): void {
         var req = new XMLHttpRequest();
         req.open('GET', 'http://api.erodouga-rin.net/thumbnails?url=' + request.value.url, false);
         req.send();
