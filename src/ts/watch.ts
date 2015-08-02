@@ -99,7 +99,6 @@ $(function() {
                 new Promise((resolve, reject) => {
                     if (alreadyInfo) return;
                     videoInfo.tags.forEach((tag) => {
-                        // var tagPromise = new Promise((resolve, reject) => {
                         var tagCount = 1;
 
                         new Promise((resolve, reject) => {
@@ -230,7 +229,7 @@ function getXHamsterInfo(): IVideoInfo {
  */
 function getThumbnailFromXHamster(pathname: string): string {
     var baseUrl = 'http://ut00.xhcdn.com/t/{videoId_last3}/s_{videoId}.jpg';
-    var videoId = pathname.match(/movies\/(.{7})/)[1];
+    var videoId = pathname.match(/movies\/(.*)\//)[1];
     
     var thumbnailUrl
         = baseUrl
