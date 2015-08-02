@@ -149,9 +149,10 @@ $(function() {
                                 if (request.type == MessageType.search_calendar_watch + '_return') {
                                     if (request.value) {
                                         var ids = (<ICalInfo>request.value).ids;
-                                        ids.push(videoInfo.id);
-
-                                        calendar = { date: today, ids: ids };
+                                        if (ids.indexOf(videoInfo.id) < 0) {
+                                            ids.push(videoInfo.id);
+                                            calendar = { date: today, ids: ids };
+                                        }
                                     }
                                     else {
                                         calendar = { date: today, ids: [videoInfo.id] };
@@ -162,6 +163,7 @@ $(function() {
                             );
                     })
                     .then(() => {
+                        if (!calendar) { return; }
                         chrome.runtime.sendMessage(
                             {
                                 type: MessageType.register_calendar,
