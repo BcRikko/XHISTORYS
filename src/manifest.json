@@ -26,7 +26,7 @@
     },
     "content_scripts": [
         {
-            "matches": ["http://jp.xvideos.com/*", "http://www.xvideos.com/*"],
+            "matches": ["http://jp.xvideos.com/*", "http://www.xvideos.com/*", "http://xhamster.com/*", "http://jp.xhamster.com/*"],
             "js": ["/js/libs/jquery.min.js", "/js/common.js", "./js/utils.js", "./js/watch.js"]
         }
     ],

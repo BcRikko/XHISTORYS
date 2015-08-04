@@ -11,7 +11,7 @@
   ],
   "dependencies": {
     "jquery": "~2.1.4",
-    "vue": "~0.12.1",
+    "vue": "~0.12.8",
     "jasmine": "~2.3.4",
     "bootstrap": "~3.3.5"
   }

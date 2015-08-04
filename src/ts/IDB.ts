@@ -4,7 +4,14 @@
 /// <reference path="./common.ts" />
 
 
+// KeyPathでMultiEntryを使うためのオーバーロード
+interface IDBObjectStore {
+    createIndex(name: string, keyPath: string[], optionalParameters?: any): IDBIndex;
+}
 
+/**
+ * データベース情報
+ */
 interface IDBInfo {
     dbName: string;
     storeName: string;
@@ -29,7 +36,7 @@ class IDBLibrary {
             this._idb = req.result;
             var store = this._idb.createObjectStore(this._idbInfo.storeName, this._idbInfo.key);
             this._idbInfo.sort.forEach(function(sort: ISortKey) {
-                store.createIndex(sort.key, sort.key, { unique: sort.unique });
+                store.createIndex(sort.key.toString(), sort.key, { unique: sort.unique });
             });
             
             
@@ -80,9 +87,14 @@ class IDBLibrary {
                 callback(result);
             } else {
                 console.log('対象データは存在しません。')
+                callback(result);
             }
 
             console.log('success:search');
+        }
+        
+        req.onerror = () => {
+            throw 'error:search' + req.error.toString();
         }
     }
 
@@ -105,16 +117,23 @@ class IDBLibrary {
         }    
         var req: IDBRequest;
         if (request.search && request.search.sort) {
-            req = store.index(request.search.sort.key).openCursor(range, request.search.sort.order);
+            req = store.index(request.search.sort.key.toString()).openCursor(range, request.search.sort.order);
         } else {
             req = store.openCursor();
         } 
+        
+        var object: any = [];
+        
         req.onsuccess = function() {
             var cursor = <IDBCursorWithValue>req.result;
-            if (cursor && callback) {
-                callback(cursor.value);
-                cursor.continue();
+            
+            if (!req.result) {
+                callback(object);
+                return;
             }
+            
+            object.push(cursor.value);
+            cursor.continue();
         }
         
         req.onerror = () => {

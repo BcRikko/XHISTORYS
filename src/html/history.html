@@ -6,20 +6,18 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link href="./libs/css/bootstrap.min.css" rel="stylesheet">
-    <link href="./css/history.css" rel="stylesheet" type="text/css" />
+    <link href="./css/history.css" rel="stylesheet" type="text/css">
 </head>
 <body id="xhistorys">
     <header class="navbar-fixed-top">
-        <form class="form-inline">
+        <form id="header-form" class="form-inline" v-on="submit: search(keywords)">
             <div class="form-group">
                 <h1 id="logo"><span class="red-x">X</span>HISTORYS</h1>
             </div>
             <div class="form-group">
                 <label class="sr-only control-label" for="keyword">キーワード</label>
-                <input id="search-keyword" type="text" class="form-control" placeholder="検索キーワードを入力"/>
-            </div>
-            <div class="form-group">
-                <input type="submit" value="検索" class="btn btn-default" />
+                <input id="search-keyword" type="text" class="form-control" v-model="keywords" placeholder="検索キーワードを入力"/>
+                <input type="button" value="検索" class="btn btn-default" v-on="click: search(keywords)"/>
                 <a class="btn btn-default" v-on="click: showAllOrFav">{{isShowFavOnly ? "すべて表示" : "お気に入りのみ表示"}}</a>
             </div>
         </form>
@@ -34,36 +32,41 @@
                     <li v-on="click: showNext" class="{{isEndPage ? 'disabled' : ''}}"><a>&gt;</a></li>
                     <li v-on="click: showLast" class="{{isEndPage ? 'disabled' : ''}}"><a>&raquo;</a></li>
                 </ul>
-            </div>
-            
-            <div id="videos" v-repeat="video :displayVideos">
+            </div><!--#pagination-->
+
+            <div class="videos" v-repeat="video :displayVideos">
                 <div id="{{video.id}}" class="video-card pull-left">
                     <div class="video-icons">
                         <i class="video-fav glyphicon glyphicon-heart video-fav-{{video.isFavorite ? 'true' : 'false'}}" v-on="click: fav(this, $index)"></i>
-                        <i class="video-tags glyphicon glyphicon-tags" v-on="click: isShowTags = !isShowTags"></i>
+                        
+                        <label class="video-tags glyphicon glyphicon-tags">
+                            <input type="checkbox" class="is-showtags" />
+                            <div class="tags">
+                                <ul class="tags-list">
+                                    <li v-repeat="video.tags"><a v-on="click: search($value)">{{$value}}</a></li>
+                                </ul>
+                            </div><!--.tags-->
+                        </label>
+
                         <i class="video-delete glyphicon glyphicon-remove pull-right" v-on="click: del($index)"></i>
-                    </div>
+                    </div><!--.video-icons-->
+                    
                     <div class="video-date">視聴 {{video.date | formatDate}}</div>
                     <div class="video-count">視聴回数 {{video.count}}回</div>
                     <div class="video-thumb" style="position: relative;">
                         <div>
                             <a href="{{video.url}}" target="_blank">
-                                <img class="video-image" src="{{video.thumbnail}}" v-on="mouseover: thumbChange($index), mouseout: thumbReset($index)"/>
+                                <img class="video-image" src="{{isSplite(video.url) ? '' : video.thumbnail}}" splite="{{isSplite(video.url) ? video.thumbnail : ''}}" style="{{video.style}}" v-on="mouseover: thumbChange($index), mouseout: thumbReset($index)"/>
                             </a>
                         </div>
                         <div class="video-time">
                             <span>{{video.time}}</span>
-                        </div>
-                    </div>
+                        </div><!--.video-time-->
+                    </div><!--.video-thumb-->
+                    
                     <div class="video-title"><a href="{{video.url}}" target="_blank" title="{{video.title}}">{{video.title}}</a></div>
-
-                    <div class="tags">
-                        <ul class="tags-list" v-show="isShowTags">
-                            <li v-repeat="video.tags">{{$value}}</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
+                </div><!--.video-card-->
+            </div> <!--#videos-->
 
             <!--このままだちページ番号が無限のびるので10くらいで表示させなくする-->
             <div id="pagination">
@@ -74,15 +77,31 @@
                     <li v-on="click: showNext" class="{{isEndPage ? 'disabled' : ''}}"><a>&gt;</a></li>
                     <li v-on="click: showLast" class="{{isEndPage ? 'disabled' : ''}}"><a>&raquo;</a></li>
                 </ul>
-            </div>
-        </div>
+            </div> <!-- #pagination -->
+        </div><!--#main-->
 
         <div id="side" class="col-sm-4">
             <div id="tag-cloud" class="well">
-                tag-cloud
+                <span v-repeat="tag: tags" class="tag" style="font-size:{{tag.fontSize}}px"><a v-on="click: search(tag.name)">{{tag.name}}</a></span>
             </div>
             <div id="calender" class="well">
-                calender
+                <div id="calendar-nav">
+                    <i class="glyphicon glyphicon-menu-left" v-on="click: moveLastMonth"></i>
+                    <span>{{calDisplay.year}} - {{calDisplay.month}}</span>
+                    <i class="glyphicon glyphicon-menu-right"  v-on="click: moveNextMonth"></i>
+                </div>
+                <table id="calendar" class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th v-repeat="week: weeks">{{week}}</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr v-repeat="week: calendar">
+                            <td v-repeat="list: week" class="watched-{{list.watched}}" v-on="click: searchWithDay(list.day, list.watched)">{{list.day}}</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
             <div class="well" id="settings">
                 <div class="form-group">
@@ -103,21 +122,10 @@
 
             <div class="well">
                 <h3>現在、α版です。</h3>
-                <h4>実装済みの機能</h4>
-                <ul>
-                    <li>視聴動画の保存</li>
-                    <li>動画のお気に入り管理</li>
-                    <li>お気に入り動画のみ表示</li>
-                    <li>視聴履歴のエクスポート・インポート</li>
-                    <li>視聴履歴の削除</li>
-                </ul>
                 <h4>追加予定の機能</h4>
                 <ul>
-                    <li>タグの表示（現在バグってます）</li>
-                    <li>キーワード検索（タイトル、タグ）</li>
-                    <li>視聴動画のタグクラウド</li>
-                    <li>ライフログとしての視聴カレンダー</li>
-                    <li>オススメ動画の表示（視聴履歴から計算）</li>
+                    <li>キーワード検索のAND検索</li>
+                    <li>オススメ動画の表示</li>
                 </ul>
                 <p>要望やバグ報告などは、<a href="https://twitter.com/bc_rikko" target="_blank">@bc_rikko</a>までお願いします。</p>
                 <p><a href="http://bcrikko.github.io/XHISTORYS/" target="_blank">公式サイト - XHISTORYS</a></p>
@@ -129,7 +137,13 @@
         <p>&copy; 2015 <a href="http://kuroeveryday.blogspot.com/" target="_blank">Black Everyday Company</a></p>
         </div>
     </footer>
-        
+
+    <div id="loading" v-if="!isLoadFinished">
+        <div>
+            <i class="glyphicon glyphicon-refresh glyphicon-refresh-animate"></i><span> Loading...</span>
+        </div>
+    </div>
+
     <script src="./libs/vue.min.js"></script>
     <script src="../js/common.js"></script>
     <script src="../js/utils.js"></script>

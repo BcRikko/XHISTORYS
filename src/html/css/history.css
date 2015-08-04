@@ -37,7 +37,6 @@ header {
     margin: 5px;
     padding: 4px;
     border: ridge;
-    overflow: hidden;
 }
 
 .video-fav{
@@ -63,11 +62,11 @@ header {
 }
 
 .video-tags:hover {
-    opacity: 0.6;
+    opacity: 1;
 }
 
 .video-tags:active {
-    opacity: 1;
+    opacity: 0.6;
     position: relative;
     top: 2px;
 }
@@ -118,4 +117,158 @@ header {
 #pagination{
     clear: left;
     text-align: center;
+}
+
+/* タグリスト */
+input[type="checkbox"].is-showtags{
+  display: none;
+}
+
+input[type="checkbox"].is-showtags + .tags{
+  display: none;
+}
+
+input[type="checkbox"].is-showtags:checked + .tags{
+  display: block;
+}
+
+.tags > .tags-list{
+    position: absolute;
+    left: -45px;
+    bottom: 20px;
+}
+
+.tags-list {
+    padding: 5px 3px;
+    position: relative;
+    background: #f5f5f5;
+    border: 2px solid gray;
+    width: 210px;
+    list-style: none;
+    border-radius: 5px;
+    z-index: 20000;
+}
+
+.tags-list:before {
+    content: "";
+    position: absolute;
+    bottom: -15px;
+    left: 45px;
+    margin-left: -10px;
+    width: 0;
+    height: 0;
+    border-top: 15px solid gray;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+}
+
+.tags-list:after {
+    content: "";
+    position: absolute;
+    bottom: -13px;
+    left: 45px;
+    margin-left: -10px;
+    width: 0;
+    height: 0;
+    border-top: 15px solid white;
+    border-left: 15px solid transparent;
+    border-right: 15px solid transparent;
+}
+
+.tags-list > li {
+    margin: 3px;
+    float: left;
+}
+
+
+/* タグクラウド */
+#tag-cloud {
+    padding: 3px 3px;
+    width: auto;
+    height: auto;
+    text-align: center;
+}
+
+#tag-cloud span {
+    padding: 0 3px;
+    text-align: center;
+    display: inline-block;
+}
+
+/* カレンダー */
+#calendar-nav {
+    text-align: center;
+    margin-bottom: 10px;
+}
+
+#calendar-nav span {
+    display: inline-block;
+    width: 200px;
+}
+
+#calendar-nav i:hover {
+    cursor: pointer;
+}
+
+.table th, td{
+    background-color: white;
+    text-align: center;
+}
+
+#calendar th:first-child {
+    background-color: #FEEEFF;
+}
+#calendar td:first-child {
+    background-color: #FEEEFF;
+}
+#calendar th:nth-child(7) {
+    background-color: #DFFFFF
+}
+#calendar td:nth-child(7) {
+    background-color: #DFFFFF
+}
+
+#calendar td:hover {
+    opacity: 0.6;
+}
+
+.watched-true {
+    color: #0000ff;
+    text-decoration: underline;
+    cursor: pointer;
+    font-weight: bold;  
+}
+
+/* 読み込み */
+#loading {
+    clear: both;
+    top: 0;
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    background-color: gainsboro;
+    overflow: hidden;
+    z-index: 2000;
+}
+
+#loading > div{
+    position: relative;
+    top: 50%;
+    left: 40%;
+    font-size: 50px;
+}
+
+.glyphicon-refresh-animate {
+    -animation: spin .7s infinite linear;
+    -webkit-animation: spinw .7s infinite linear;
+}
+
+@keyframes spin {
+    from { -transform: scale(1) rotate(0deg);}
+    to { -transform: scale(1) rotate(360deg);}
+}
+
+@-webkit-keyframes spinw {
+    from { -webkit-transform: rotate(0deg);}
+    to { -webkit-transform: rotate(360deg);}
 }
